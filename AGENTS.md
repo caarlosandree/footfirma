@@ -92,6 +92,45 @@ comando, ele executa na própria sessão com `! <comando>`.
   validações não executadas e por quê, e alterações preexistentes no worktree.
   Nunca diga "pronto" sem ter rodado o comando que sustenta a frase.
 
+## Releases (release-please)
+
+Os dois lados são versionados **de forma independente**, a partir dos commits
+convencionais. Nada é publicado em registry: o release-please só gera versão,
+CHANGELOG, tag e GitHub Release.
+
+| Branch | Workflow | Config / manifesto | Produz |
+|---|---|---|---|
+| `staging` | `.github/workflows/release-please-staging.yml` | `.github/release-please/config.staging.json` + `manifest.staging.json` | pré-releases `frontend-v0.1.0-rc.1`, `backend-v0.1.0-rc.1` |
+| `main` | `.github/workflows/release-please.yml` | `release-please-config.json` + `.release-please-manifest.json` | releases estáveis `frontend-v0.1.0`, `backend-v0.1.0` |
+
+Os dois fluxos são **disjuntos por construção** — nenhum arquivo é escrito pelos
+dois, então o PR `staging → main` nunca conflita por causa de release:
+
+- `staging` roda com `skip-changelog` e sem arquivo de versão, então seu PR de
+  release altera **só** `manifest.staging.json`.
+- `main` escreve `frontend/package.json`, `frontend/CHANGELOG.md`,
+  `backend/footfirma/CHANGELOG.md` e a versão do `build.gradle`.
+
+Consequência prática: **não crie `frontend/version.txt` nem
+`backend/footfirma/version.txt`**. O release type `simple` só atualiza esse arquivo
+se ele já existir; criá-lo faria as duas branches escreverem no mesmo lugar e traria
+o conflito de volta.
+
+A versão do backend vive no `build.gradle`, na linha marcada com
+`// x-release-please-version` — é ela que o release-please reescreve. Não remova a
+marcação nem coloque outro número semver na mesma linha.
+
+Duas condições para o fluxo funcionar:
+
+- O PR `staging → main` precisa ser mergeado com **merge commit**, não squash. O
+  release-please lê os commits convencionais individuais para calcular o bump e
+  montar o CHANGELOG; um squash colapsa tudo em um commit só.
+- Em *Settings → Actions → General*, habilite **"Allow GitHub Actions to create and
+  approve pull requests"**, senão o workflow não consegue abrir o PR de release.
+  Opcionalmente, defina o secret `RELEASE_PLEASE_TOKEN` (PAT com `contents` e
+  `pull_requests`) para que o PR de release dispare os demais workflows — o
+  `GITHUB_TOKEN` padrão não dispara.
+
 ## Estado atual
 
 Os dois lados estão em estágio de scaffold: o backend tem apenas

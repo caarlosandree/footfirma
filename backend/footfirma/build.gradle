@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'br.com.api'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.1-SNAPSHOT' // x-release-please-version
 description = 'footfirma'
 
 java {
@@ -23,6 +23,7 @@ ext {
     set('springdocVersion', "3.0.3")
     set('mapstructVersion', "1.6.3")
     set('lombokMapstructBindingVersion', "0.2.0")
+    set('springDotenvVersion', "5.1.0")
 }
 
 dependencies {
@@ -41,6 +42,8 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
     compileOnly 'org.projectlombok:lombok'
+    developmentOnly platform("me.paulschwarz:spring-dotenv-bom:${springDotenvVersion}")
+    developmentOnly 'me.paulschwarz:springboot4-dotenv'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
     runtimeOnly 'org.postgresql:postgresql'

@@ -1,0 +1,31 @@
+name: release-please (produção)
+
+# Abre o PR de release estável na `main`. Roda quando o PR staging -> main é mergeado.
+# O merge precisa ser merge commit (não squash): o release-please lê os commits
+# convencionais individuais para calcular o bump e montar o CHANGELOG.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-main
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # RELEASE_PLEASE_TOKEN (PAT) é opcional; sem ele o GITHUB_TOKEN funciona,
+          # mas os PRs criados não disparam outros workflows (ex.: CI).
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          target-branch: main
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
