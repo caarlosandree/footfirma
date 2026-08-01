@@ -76,8 +76,8 @@ comando, ele executa na própria sessão com `! <comando>`.
 
 - Responda e escreva commits em **português brasileiro**.
 - **Não suba serviços** sem pedido explícito (o guard bloqueia).
-- **Não faça `git push`, `merge` ou force-push** sem pedido explícito. Ambos estão em
-  `main` e nenhum tem remote configurado.
+- **Não faça `git push`, `merge` ou force-push** sem pedido explícito. O remote é
+  `origin` → `git@github.com:caarlosandree/footfirma.git`, branch `main`.
 - **Nunca** adicione `Co-authored-by:` em mensagem de commit.
 - Nenhum segredo em código, log ou commit.
 - Antes de encerrar uma tarefa, percorra o checklist do repositório:
