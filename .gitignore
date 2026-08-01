@@ -1,0 +1,86 @@
+# FootFirma — .gitignore raiz
+# Cobre frontend (Node/pnpm/Turborepo/Next.js) e backend (Gradle/Java/Spring Boot),
+# além de SO, IDEs e segredos. Cada repositório (frontend/, backend/footfirma/) tem
+# seu próprio .gitignore específico — este arquivo serve o workspace como um todo.
+
+# ===== Sistema operacional =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===== Editores / IDEs =====
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ===== Segredos / variáveis de ambiente =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+credentials.json
+secrets.yaml
+
+# ===== Logs =====
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===== Node / pnpm / Turborepo / Next.js (frontend/) =====
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+.next/
+out/
+dist/
+build/
+.turbo/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# ===== Gradle / Java / Spring Boot (backend/footfirma/) =====
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+HELP.md
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== Diversos =====
+*.tmp
+*.bak
