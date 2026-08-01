@@ -79,7 +79,9 @@ chore(deps): atualiza next e react para as versões mais recentes da major
 
 ## Fluxo
 
-- Trabalhe em branch `feat/...` ou `fix/...`; a branch atual é `main`.
+- Trabalhe em branch `feat/...` ou `fix/...` e abra PR para `staging`, que é a
+  branch padrão do repositório. `main` é produção e só recebe PR vindo de
+  `staging`.
 - **Não execute `git push` nem force-push sem pedido explícito.** `git merge` local
   é livre — o que exige pedido é publicar no remote.
 - Antes de commitar, percorra `.rules/nextjs-checklist.md`.
