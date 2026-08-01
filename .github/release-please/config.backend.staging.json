@@ -9,6 +9,19 @@
   "label": "autorelease: pending backend-rc",
   "release-label": "autorelease: tagged backend-rc",
   "pull-request-title-pattern": "chore(${component}): release candidate ${version}",
+  "changelog-sections": [
+    { "type": "feat", "section": "Funcionalidades" },
+    { "type": "fix", "section": "Correções" },
+    { "type": "perf", "section": "Performance" },
+    { "type": "revert", "section": "Revertidos" },
+    { "type": "docs", "section": "Documentação", "hidden": true },
+    { "type": "refactor", "section": "Refatorações", "hidden": true },
+    { "type": "chore", "section": "Tarefas", "hidden": true },
+    { "type": "test", "section": "Testes", "hidden": true },
+    { "type": "build", "section": "Build", "hidden": true },
+    { "type": "ci", "section": "CI", "hidden": true },
+    { "type": "style", "section": "Estilo", "hidden": true }
+  ],
   "packages": {
     "backend/footfirma": {
       "release-type": "simple",

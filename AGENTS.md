@@ -109,6 +109,21 @@ CHANGELOG, tag e GitHub Release.
 | `staging` | `.github/workflows/release-please-staging.yml` | pré-releases `frontend-v0.1.0-rc.1`, `backend-v0.1.0-rc.1` |
 | `main` | `.github/workflows/release-please.yml` | releases estáveis `frontend-v0.1.0`, `backend-v0.1.0` |
 
+### O que gera release
+
+Só `feat`, `fix`, `perf`, `revert` e breaking change. `docs`, `refactor`, `chore`,
+`test`, `build`, `ci` e `style` entram no histórico mas **não versionam nada** —
+seguem para o próximo release junto de um commit que conte.
+
+No release-please as duas coisas são a mesma decisão: ele pula o release quando as
+release notes saem vazias, então um tipo oculto no changelog é também um tipo que
+não dispara release. Não existe "aparece no CHANGELOG mas não versiona".
+
+Por isso as `changelog-sections` são **idênticas nos quatro configs**. Se
+divergirem, `staging` e `main` passam a discordar sobre o que merece release — e
+sai versão estável em produção sem o release candidate correspondente. Ao mexer
+nelas, mexa nas quatro.
+
 ### Nada é compartilhado entre componentes
 
 Cada combinação branch × componente tem **config, manifesto e par de labels
