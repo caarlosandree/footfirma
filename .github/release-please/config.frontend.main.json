@@ -1,9 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "bootstrap-sha": "713cb90e1614dc287f30af3ed174219d19fe6dba",
-  "separate-pull-requests": true,
   "include-component-in-tag": true,
   "bump-minor-pre-major": true,
+  "label": "autorelease: pending frontend",
+  "release-label": "autorelease: tagged frontend",
   "pull-request-title-pattern": "chore(${component}): release ${version}",
   "changelog-sections": [
     { "type": "feat", "section": "Funcionalidades" },
@@ -22,16 +23,6 @@
     "frontend": {
       "release-type": "node",
       "component": "frontend"
-    },
-    "backend/footfirma": {
-      "release-type": "simple",
-      "component": "backend",
-      "extra-files": [
-        {
-          "type": "generic",
-          "path": "build.gradle"
-        }
-      ]
     }
   }
 }

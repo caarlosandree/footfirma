@@ -2,8 +2,10 @@ name: release-please (staging)
 
 # Abre o PR de release candidate na `staging`. Roda a cada merge de feature.
 # Este fluxo é deliberadamente estéril: com `skip-changelog` e sem `version.txt`
-# nos pacotes, o PR de release só altera `manifest.staging.json` — nenhum arquivo
+# nos pacotes, o PR de release só altera o próprio manifesto — nenhum arquivo
 # compartilhado com o fluxo da `main`, logo nenhum conflito no PR staging -> main.
+#
+# Assim como na `main`, cada componente tem config, manifesto e labels próprios.
 on:
   push:
     branches:
@@ -14,17 +16,20 @@ permissions:
   contents: write
   pull-requests: write
 
-concurrency:
-  group: release-please-staging
-  cancel-in-progress: false
-
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [frontend, backend]
+    concurrency:
+      group: release-please-staging-${{ matrix.component }}
+      cancel-in-progress: false
     steps:
       - uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           target-branch: staging
-          config-file: .github/release-please/config.staging.json
-          manifest-file: .github/release-please/manifest.staging.json
+          config-file: .github/release-please/config.${{ matrix.component }}.staging.json
+          manifest-file: .github/release-please/manifest.${{ matrix.component }}.staging.json

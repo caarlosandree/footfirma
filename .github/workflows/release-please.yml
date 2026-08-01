@@ -3,6 +3,11 @@ name: release-please (produção)
 # Abre o PR de release estável na `main`. Roda quando o PR staging -> main é mergeado.
 # O merge precisa ser merge commit (não squash): o release-please lê os commits
 # convencionais individuais para calcular o bump e montar o CHANGELOG.
+#
+# Cada componente roda com config, manifesto e labels PRÓPRIOS. Isso é o que
+# impede que mergear o PR de release de um componente quebre o do outro — se os
+# dois compartilhassem o manifesto, o segundo merge sobrescreveria a versão que o
+# primeiro acabou de gravar.
 on:
   push:
     branches:
@@ -13,13 +18,16 @@ permissions:
   contents: write
   pull-requests: write
 
-concurrency:
-  group: release-please-main
-  cancel-in-progress: false
-
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [frontend, backend]
+    concurrency:
+      group: release-please-main-${{ matrix.component }}
+      cancel-in-progress: false
     steps:
       - uses: googleapis/release-please-action@v4
         with:
@@ -27,5 +35,5 @@ jobs:
           # mas os PRs criados não disparam outros workflows (ex.: CI).
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           target-branch: main
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
+          config-file: .github/release-please/config.${{ matrix.component }}.main.json
+          manifest-file: .github/release-please/manifest.${{ matrix.component }}.main.json

@@ -98,16 +98,42 @@ Os dois lados são versionados **de forma independente**, a partir dos commits
 convencionais. Nada é publicado em registry: o release-please só gera versão,
 CHANGELOG, tag e GitHub Release.
 
-| Branch | Workflow | Config / manifesto | Produz |
-|---|---|---|---|
-| `staging` | `.github/workflows/release-please-staging.yml` | `.github/release-please/config.staging.json` + `manifest.staging.json` | pré-releases `frontend-v0.1.0-rc.1`, `backend-v0.1.0-rc.1` |
-| `main` | `.github/workflows/release-please.yml` | `release-please-config.json` + `.release-please-manifest.json` | releases estáveis `frontend-v0.1.0`, `backend-v0.1.0` |
+| Branch | Workflow | Produz |
+|---|---|---|
+| `staging` | `.github/workflows/release-please-staging.yml` | pré-releases `frontend-v0.1.0-rc.1`, `backend-v0.1.0-rc.1` |
+| `main` | `.github/workflows/release-please.yml` | releases estáveis `frontend-v0.1.0`, `backend-v0.1.0` |
 
-Os dois fluxos são **disjuntos por construção** — nenhum arquivo é escrito pelos
-dois, então o PR `staging → main` nunca conflita por causa de release:
+### Nada é compartilhado entre componentes
+
+Cada combinação branch × componente tem **config, manifesto e par de labels
+próprios** — quatro conjuntos independentes em `.github/release-please/`:
+
+```
+config.<componente>.<branch>.json
+manifest.<componente>.<branch>.json
+```
+
+Isso não é organização, é correção. Com um manifesto único para os dois
+componentes, os dois PRs de release editam o mesmo arquivo: ao mergear um, o
+outro fica desatualizado e, se for mergeado antes do workflow recriá-lo,
+**sobrescreve a versão que o primeiro acabou de gravar**. As labels também
+precisam ser distintas, porque o release-please varre todo PR mergeado que tenha
+a label de release e o cruza contra os pacotes do seu config.
+
+Consequências ao mexer nisso:
+
+- `include-component-in-tag: true` é **obrigatório** em cada config. Como cada um
+  declara um pacote só, sem essa opção as tags sairiam como `v0.1.0`, sem o
+  prefixo do componente — e os dois componentes colidiriam na mesma tag.
+- Ao adicionar um terceiro componente, crie o par de arquivos e as labels dele e
+  acrescente o nome à `matrix.component` dos dois workflows.
+
+### Por que o PR staging → main não conflita
+
+Nenhum arquivo é escrito pelos dois fluxos:
 
 - `staging` roda com `skip-changelog` e sem arquivo de versão, então seu PR de
-  release altera **só** `manifest.staging.json`.
+  release altera **só** o próprio `manifest.<componente>.staging.json`.
 - `main` escreve `frontend/package.json`, `frontend/CHANGELOG.md`,
   `backend/footfirma/CHANGELOG.md` e a versão do `build.gradle`.
 

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "713cb90e1614dc287f30af3ed174219d19fe6dba",
+  "include-component-in-tag": true,
+  "bump-minor-pre-major": true,
+  "label": "autorelease: pending backend",
+  "release-label": "autorelease: tagged backend",
+  "pull-request-title-pattern": "chore(${component}): release ${version}",
+  "changelog-sections": [
+    { "type": "feat", "section": "Funcionalidades" },
+    { "type": "fix", "section": "Correções" },
+    { "type": "perf", "section": "Performance" },
+    { "type": "refactor", "section": "Refatorações" },
+    { "type": "docs", "section": "Documentação" },
+    { "type": "revert", "section": "Revertidos" },
+    { "type": "chore", "section": "Tarefas", "hidden": true },
+    { "type": "test", "section": "Testes", "hidden": true },
+    { "type": "build", "section": "Build", "hidden": true },
+    { "type": "ci", "section": "CI", "hidden": true },
+    { "type": "style", "section": "Estilo", "hidden": true }
+  ],
+  "packages": {
+    "backend/footfirma": {
+      "release-type": "simple",
+      "component": "backend",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "build.gradle"
+        }
+      ]
+    }
+  }
+}

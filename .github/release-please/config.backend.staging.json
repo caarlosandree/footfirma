@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "c32d54301a9b5d553f5a3d7fa89fb4c33c3fe83b",
+  "include-component-in-tag": true,
+  "bump-minor-pre-major": true,
+  "versioning": "prerelease",
+  "prerelease": true,
+  "skip-changelog": true,
+  "label": "autorelease: pending backend-rc",
+  "release-label": "autorelease: tagged backend-rc",
+  "pull-request-title-pattern": "chore(${component}): release candidate ${version}",
+  "packages": {
+    "backend/footfirma": {
+      "release-type": "simple",
+      "component": "backend",
+      "prerelease-type": "rc"
+    }
+  }
+}
