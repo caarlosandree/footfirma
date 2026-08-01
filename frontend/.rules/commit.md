@@ -80,5 +80,6 @@ chore(deps): atualiza next e react para as versões mais recentes da major
 ## Fluxo
 
 - Trabalhe em branch `feat/...` ou `fix/...`; a branch atual é `main`.
-- **Não execute `git push`, `git merge` ou force-push sem pedido explícito.**
+- **Não execute `git push` nem force-push sem pedido explícito.** `git merge` local
+  é livre — o que exige pedido é publicar no remote.
 - Antes de commitar, percorra `.rules/nextjs-checklist.md`.

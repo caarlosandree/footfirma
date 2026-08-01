@@ -39,7 +39,7 @@ aqui — ela já está versionada em `node_modules/next/dist/docs/`.
 **bloqueia de verdade**, não apenas avisa:
 
 - subir serviços (`pnpm dev`, `next dev`, `turbo dev`, `docker compose up`)
-- `git push`, `reset --hard`, `clean -fd`, `rebase -i`, `commit --amend`, `branch -D`
+- `git push` e force-push — **só o que publica no remote**; operação local é livre
 - commitar segredo (PAT, chave de API, private key, URL de banco com senha, JWT)
 
 Bloqueio não é sugestão de contornar por outro caminho. Se o usuário realmente quer o
@@ -90,7 +90,7 @@ real ainda será criada — siga `.rules/nextjs-core.md` ao criá-la.
 - Dar prefixo `NEXT_PUBLIC_` a segredo, ou importar módulo com segredo em arquivo cliente
 - Rodar `npm`/`yarn` — o gerenciador é `pnpm`
 - Subir servidor (`pnpm dev`) sem pedido explícito
-- `git push` / `merge` / force-push sem pedido explícito
+- `git push` / force-push sem pedido explícito (`merge` local é livre)
 - Adicionar `Co-authored-by:` em mensagem de commit
 
 ## Onde este repositório se encaixa

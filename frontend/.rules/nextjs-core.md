@@ -308,7 +308,7 @@ framework) vale ouro.
 - Não crie `tailwind.config.js` — Tailwind v4 configura por CSS em
   `packages/ui/src/styles/globals.css`.
 - Não escreva `middleware.ts`. É `proxy.ts`.
-- `git push` / `merge` / force-push só com pedido explícito.
+- `git push` / force-push só com pedido explícito; `merge` local é livre.
 
 ## Módulos relacionados
 

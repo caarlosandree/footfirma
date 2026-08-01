@@ -98,7 +98,7 @@ como não aplicável, não pulado em silêncio.
 ## Antes do push
 
 - [ ] `pnpm lint && pnpm typecheck && pnpm build` verdes
-- [ ] Sem push, merge ou force-push sem pedido explícito do usuário
+- [ ] Sem push ou force-push sem pedido explícito do usuário (merge local é livre)
 
 ## Registro de fechamento (obrigatório)
 

@@ -79,5 +79,6 @@ chore(gradle): atualiza Spring Modulith para a versão mais recente da major
 ## Fluxo
 
 - Trabalhe em branch `feat/...` ou `fix/...`; a branch atual é `main`.
-- **Não execute `git push`, `git merge` ou force-push sem pedido explícito.**
+- **Não execute `git push` nem force-push sem pedido explícito.** `git merge` local
+  é livre — o que exige pedido é publicar no remote.
 - Antes de commitar, percorra `.rules/java-checklist.md`.

@@ -88,7 +88,7 @@ aplica é declarado como não aplicável, não ignorado em silêncio.
 ## Antes do push
 
 - [ ] `./gradlew build` passa (compila + suíte completa, exige Docker)
-- [ ] Não há push, merge ou force-push sem pedido explícito do usuário
+- [ ] Não há push ou force-push sem pedido explícito do usuário (merge local é livre)
 
 ## Registro de fechamento (obrigatório)
 

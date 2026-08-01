@@ -5,8 +5,11 @@
  * Transforma em bloqueio real três regras que, escritas só em texto, dependem da
  * boa vontade do agente:
  *   1. não subir serviços sem pedido explícito;
- *   2. não fazer push / reset --hard / clean -fd / rebase -i / commit --amend;
+ *   2. não publicar no remote (push / force-push) sem pedido explícito;
  *   3. não commitar migration Flyway já aplicada, nem segredo.
+ *
+ * O corte é entre local e remoto, não entre seguro e perigoso: merge, rebase, amend,
+ * reset e clean ficam livres porque não saem da máquina do usuário.
  *
  * Também barra a edição direta de uma migration já versionada, antes mesmo do commit.
  *
@@ -137,22 +140,23 @@ function bloquearSubidaDeServico(comando) {
   }
 }
 
+/**
+ * Bloqueia apenas o que publica no remote. Operações locais — merge, rebase, amend,
+ * reset, clean, branch -D — são do usuário e não passam por aqui: elas não saem da
+ * máquina dele e desfazer é problema local. O que não pode acontecer sem pedido
+ * explícito é o agente empurrar qualquer coisa para o `origin`.
+ */
 function bloquearGitPerigoso(comando) {
   const perigosos = [
     [/\bgit\s+push\b.*--force\b/, "`git push --force`"],
     [/\bgit\s+push\b.*--force-with-lease\b/, "`git push --force-with-lease`"],
     [/\bgit\s+push\b/, "`git push`"],
-    [/\bgit\s+reset\b.*--hard\b/, "`git reset --hard`"],
-    [/\bgit\s+clean\b.*(?:-[a-z]*f[a-z]*d|-[a-z]*d[a-z]*f)\b/, "`git clean -fd`"],
-    [/\bgit\s+rebase\b.*(?:^|\s)-i\b/, "`git rebase -i`"],
-    [/\bgit\s+commit\b.*--amend\b/, "`git commit --amend`"],
-    [/\bgit\s+branch\b.*(?:^|\s)-D\b/, "`git branch -D`"],
   ]
 
   for (const [re, rotulo] of perigosos) {
     if (re.test(comando)) {
       negar(
-        `Bloqueado pelo guard do FootFirma: ${rotulo} reescreve ou publica histórico e exige ` +
+        `Bloqueado pelo guard do FootFirma: ${rotulo} publica no remote e exige ` +
           `pedido explícito do usuário (regra em AGENTS.md).\n\n` +
           `Se o usuário já pediu, ele mesmo executa na sessão:\n  ! ${comando.trim()}`
       )

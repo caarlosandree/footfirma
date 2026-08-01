@@ -62,7 +62,7 @@ Os três diretórios (raiz, `frontend/`, `backend/footfirma/`) têm
 `.claude/hooks/guard.mjs`. O guard **bloqueia**, não avisa:
 
 - subir serviços (`pnpm dev`, `./gradlew bootRun`, `docker compose up`, …)
-- `git push`, `reset --hard`, `clean -fd`, `rebase -i`, `commit --amend`, `branch -D`
+- `git push` e force-push — **só o que publica no remote**
 - editar ou commitar migration Flyway já versionada
 - commitar segredo (PAT, chave de API, private key, URL de banco com senha, JWT)
 
@@ -76,13 +76,19 @@ comando, ele executa na própria sessão com `! <comando>`.
 
 - Responda e escreva commits em **português brasileiro**.
 - **Não suba serviços** sem pedido explícito (o guard bloqueia).
-- **Não faça `git push`, `merge` ou force-push** sem pedido explícito. O remote é
+- **Não faça `git push` nem force-push** sem pedido explícito. O remote é
   `origin` → `git@github.com:caarlosandree/footfirma.git`.
+- Operação **local é livre** — `merge`, `rebase`, `commit --amend`, `reset`,
+  `clean`, `branch -D`. Nada disso sai da máquina, e desfazer é problema local. A
+  fronteira que o guard defende é o remote, não o histórico local.
 - **Fluxo de branches**: `staging` é a branch padrão do repositório; `main` é
   produção. Nada vai para `main` sem passar por `staging` antes — branch de
   feature → PR para `staging` → depois de validado, PR de `staging` para `main`.
   As duas branches são protegidas no GitHub (PR obrigatório, 1 aprovação, sem
-  force-push nem delete); só o dono do repositório aprova.
+  force-push nem delete); só o dono do repositório aprova. A proteção vale **no
+  remote e não vale para administradores** (`enforce_admins: false`): o dono
+  consegue push direto. Ela não alcança o repositório local — merge, rebase e
+  reset aqui não passam por ela.
 - **Nunca** adicione `Co-authored-by:` em mensagem de commit.
 - Nenhum segredo em código, log ou commit.
 - Antes de encerrar uma tarefa, percorra o checklist do repositório:

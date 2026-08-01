@@ -32,7 +32,7 @@ validação. Nota sem fonte verificável não entra.
 **bloqueia de verdade**, não apenas avisa:
 
 - subir serviços (`./gradlew bootRun`, `docker compose up`)
-- `git push`, `reset --hard`, `clean -fd`, `rebase -i`, `commit --amend`, `branch -D`
+- `git push` e force-push — **só o que publica no remote**; operação local é livre
 - editar ou commitar migration Flyway já versionada
 - commitar segredo (PAT, chave de API, private key, URL de banco com senha, JWT)
 
@@ -82,7 +82,7 @@ O projeto está em estágio inicial: só existem `FootfirmaApplication` e
 - Escrever `componentModel = "spring"` no `@Mapper` (já é padrão do build)
 - Copiar snippets de Spring Boot 3: aqui é Boot 4, os starters mudaram de nome
 - Subir serviços (`bootRun`, `docker compose up`) sem pedido explícito
-- `git push` / `merge` / force-push sem pedido explícito
+- `git push` / force-push sem pedido explícito (`merge` local é livre)
 - Adicionar `Co-authored-by:` em mensagem de commit
 
 ## Onde este repositório se encaixa
