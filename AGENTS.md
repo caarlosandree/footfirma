@@ -77,7 +77,12 @@ comando, ele executa na própria sessão com `! <comando>`.
 - Responda e escreva commits em **português brasileiro**.
 - **Não suba serviços** sem pedido explícito (o guard bloqueia).
 - **Não faça `git push`, `merge` ou force-push** sem pedido explícito. O remote é
-  `origin` → `git@github.com:caarlosandree/footfirma.git`, branch `main`.
+  `origin` → `git@github.com:caarlosandree/footfirma.git`.
+- **Fluxo de branches**: `staging` é a branch padrão do repositório; `main` é
+  produção. Nada vai para `main` sem passar por `staging` antes — branch de
+  feature → PR para `staging` → depois de validado, PR de `staging` para `main`.
+  As duas branches são protegidas no GitHub (PR obrigatório, 1 aprovação, sem
+  force-push nem delete); só o dono do repositório aprova.
 - **Nunca** adicione `Co-authored-by:` em mensagem de commit.
 - Nenhum segredo em código, log ou commit.
 - Antes de encerrar uma tarefa, percorra o checklist do repositório:
