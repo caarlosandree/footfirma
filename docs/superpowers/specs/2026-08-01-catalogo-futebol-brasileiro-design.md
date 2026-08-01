@@ -60,6 +60,25 @@ As fontes escolhidas têm fragilidade jurídica conhecida e documentada em "Risc
 
 ## Arquitetura de módulos
 
+**Nota de nomenclatura.** Este documento usa nomes em inglês para os módulos e as
+tabelas. O código e o schema usam **português**, por exigência de
+`.rules/java-core.md` ("nome de domínio em português") e `.rules/database.md`
+("nomes em português"). A correspondência é direta e vale para todo o documento:
+
+| Aqui | No código e no banco |
+|---|---|
+| `season` | `temporada` |
+| `geography` | `geografia` (`country` → `pais`, `state` → `estado`) |
+| `club` | `clube` (`stadium` → `estadio`, `club_alias` → `clube_alias`) |
+| `player` | `jogador` (`player_attributes` → `jogador_atributo`, `trait` → `caracteristica`, `player_club_link` → `jogador_vinculo`, `position` → `posicao`) |
+| `competition` | `competicao` (`competition_edition` → `edicao`, `competition_stage` → `fase`, `qualification_rule` → `regra_classificacao`) |
+| `rating` | `avaliacao` (`rating_profile` → `perfil_avaliacao`, `player_overall` → `jogador_overall`) |
+| `progression` | `progressao` (`growth_archetype` → `arquetipo_crescimento`, `injury_type` → `tipo_lesao`) |
+| `dataimport` | `importacao` (`import_run` → `importacao_execucao`, `import_issue` → `importacao_ocorrencia`) |
+| `external_ref` | `*_referencia_externa` |
+
+Os planos de implementação em `docs/superpowers/plans/` usam os nomes finais.
+
 Oito módulos Spring Modulith, cada um dono exclusivo das suas tabelas.
 
 | Módulo | Dono de | Depende de |
