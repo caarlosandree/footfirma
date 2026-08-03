@@ -22,7 +22,8 @@ public class JogadorOverall {
     private Long id;
 
     // As três referências apontam para fora do módulo avaliacao: coluna crua, sem
-    // @ManyToOne, como Jogador.paisId e JogadorAtributo.temporadaId já fazem.
+    // associação JPA, como Jogador.paisId e JogadorAtributo.temporadaId já fazem.
+    // A integridade fica nas chaves estrangeiras declaradas na migration V12.
     @Column(name = "jogador_id", nullable = false)
     private Long jogadorId;
 
