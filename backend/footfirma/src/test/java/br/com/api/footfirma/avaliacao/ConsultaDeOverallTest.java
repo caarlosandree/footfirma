@@ -28,9 +28,15 @@ class ConsultaDeOverallTest {
 
     @BeforeEach
     void prepararSeisJogadoresEmpatados() {
+        // As seis tabelas dependentes de jogador, antes de jogador: desde que o
+        // importador existe, _atributo_oculto, _caracteristica e _posicao também
+        // podem ter linhas deixadas por outra classe de teste.
         jdbcTemplate.update("delete from jogador_overall");
         jdbcTemplate.update("delete from jogador_atributo");
         jdbcTemplate.update("delete from jogador_vinculo");
+        jdbcTemplate.update("delete from jogador_atributo_oculto");
+        jdbcTemplate.update("delete from jogador_caracteristica");
+        jdbcTemplate.update("delete from jogador_posicao");
         jdbcTemplate.update("delete from jogador");
         jdbcTemplate.update("""
                 insert into temporada (label, ano_inicio, ano_fim) values ('2043', 2043, 2043)
