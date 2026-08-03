@@ -112,8 +112,14 @@ class ModularidadeTest {
 }
 ```
 
-Ao criar o primeiro módulo de domínio, crie também este teste. Quando ele falhar,
-**corrija a dependência**, não relaxe a verificação.
+Este teste já existe em `src/test/java/br/com/api/footfirma/ModularidadeTest.java` e
+cobre todos os módulos automaticamente — não é preciso criá-lo nem editá-lo ao
+adicionar um módulo novo. Quando ele falhar, **corrija a dependência**, não relaxe a
+verificação.
+
+A falha mais comum não é dependência indevida: é consumir um subpacote `dto/` de outro
+módulo que ainda não declarou `@NamedInterface`. O erro aponta a violação, não o
+`package-info.java` que falta.
 
 ## Teste de repository
 

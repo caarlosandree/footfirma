@@ -95,7 +95,8 @@ real ainda será criada — siga `.rules/nextjs-core.md` ao criá-la.
 
 ## Onde este repositório se encaixa
 
-O backend Spring Boot vive em um repositório separado, em `../backend/footfirma`, e
-expõe a API em `/api/v1/` (Swagger em `http://localhost:8080/swagger-ui.html`).
+O backend Spring Boot vive em `../backend/footfirma`, no **mesmo repositório git** — a
+raiz é um monorepo, não um agrupador de repositórios separados. Ele expõe a API em
+`/api/v1/` (Swagger em `http://localhost:8080/swagger-ui.html`).
 Tipos de request e response devem espelhar esse contrato real, validados com Zod no
 boundary. Índice do sistema: `../AGENTS.md`.

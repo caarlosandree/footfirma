@@ -55,18 +55,36 @@ Swagger UI: `http://localhost:8080/swagger-ui.html` · OpenAPI: `/v3/api-docs`
 ```
 src/main/java/br/com/api/footfirma/
 ├── FootfirmaApplication.java
-├── config/       # cross-cutting (OpenApiConfig) — módulo Modulith aberto
+├── config/       # cross-cutting (OpenApiConfig, SecurityConfig) — módulo aberto
 ├── shared/       # tipos reutilizáveis entre módulos — módulo aberto
 └── <feature>/    # um módulo Modulith por domínio: web/ domain/ repository/ mapper/ dto/ internal/
 
 src/main/resources/
 ├── application.properties
-└── db/migration/ # Flyway: V{n}__descricao.sql (ainda vazio)
+└── db/migration/ # Flyway: V{n}__descricao.sql (V1…V13 aplicadas)
 ```
 
-O projeto está em estágio inicial: só existem `FootfirmaApplication` e
-`config/OpenApiConfig`. O primeiro módulo de domínio ainda será criado — siga
-`.rules/java-core.md` ao criá-lo.
+Status: verificado em 2026-08-03.
+
+Seis módulos de domínio existem: `temporada`, `geografia`, `clube`, `jogador`,
+`competicao` e `avaliacao`. **Ao criar o próximo, copie o formato de um deles** — a
+estrutura já está estabelecida, e partir do zero só produz divergência.
+
+Dois pontos que a leitura do código não entrega de imediato:
+
+- **Referência a outro módulo é coluna `Long` crua, nunca `@ManyToOne`.** Associação
+  JPA só dentro do mesmo módulo. Veja `Jogador.paisId`, `JogadorAtributo.temporadaId`
+  e as três de `JogadorOverall`. A integridade fica na chave estrangeira da migration.
+- **Subpacote só cruza a fronteira do módulo com `@NamedInterface`.** Hoje
+  `temporada/dto`, `clube/dto`, `jogador/dto` e `avaliacao/dto` o declaram. Sem isso o
+  `ModularidadeTest` reprova o consumidor — e o erro aparece como falha de
+  modularidade, não como erro de compilação no lugar da causa.
+
+A API é read-only por decisão registrada em
+`docs/adr/2026-08-01-catalogo-read-only.md`: nenhum controller aceita `POST`, `PUT`,
+`PATCH` ou `DELETE`. A única escrita virá do importador. O banco tem o schema completo
+e os seeds de catálogo, e está **vazio de clubes e jogadores** — os endpoints respondem
+lista vazia e 404 em banco real até o importador rodar.
 
 ## O que nunca fazer neste repositório
 
@@ -87,6 +105,7 @@ O projeto está em estágio inicial: só existem `FootfirmaApplication` e
 
 ## Onde este repositório se encaixa
 
-O frontend Next.js vive em um repositório separado, em `../../frontend`, e consome
-esta API em `/api/v1/`. Contrato quebrado aqui quebra o frontend: mudança
-incompatível vira `/api/v2`, não alteração da v1. Índice do sistema: `../../AGENTS.md`.
+O frontend Next.js vive em `../../frontend`, no **mesmo repositório git** — a raiz é um
+monorepo, não um agrupador de repositórios separados. Ele consome esta API em
+`/api/v1/`. Contrato quebrado aqui quebra o frontend: mudança incompatível vira
+`/api/v2`, não alteração da v1. Índice do sistema: `../../AGENTS.md`.

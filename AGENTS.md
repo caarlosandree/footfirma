@@ -1,9 +1,10 @@
 # FootFirma — Índice do sistema
 
-Este diretório **não é um repositório git**: é o workspace local que agrupa dois
-repositórios independentes, cada um com seu próprio conjunto de regras.
+Este diretório é a raiz de um **monorepo git único** que abriga os dois lados do
+sistema, cada um com seu próprio conjunto de regras. Um commit pode tocar os dois, e
+o histórico é compartilhado — mas as regras não: cada lado tem as suas.
 
-| Repositório | Caminho | Stack | Regras |
+| Lado | Caminho | Stack | Regras |
 |---|---|---|---|
 | Frontend | `frontend/` | Turborepo + pnpm · Next.js 16 (App Router) · React 19 · Tailwind v4 · shadcn/ui sobre Base UI · Zod 4 | `frontend/AGENTS.md` → `frontend/.rules/` |
 | Backend | `backend/footfirma/` | Spring Boot 4 · Java 25 · Spring Modulith · PostgreSQL · Redis · Flyway · Gradle | `backend/footfirma/AGENTS.md` → `backend/footfirma/.rules/` |
@@ -15,9 +16,9 @@ nas regras.
 
 ## Antes de qualquer coisa
 
-Abra o `AGENTS.md` do repositório em que você vai trabalhar e siga o arquivo de
-`.rules/` correspondente à tarefa. Este índice existe só para orientar; ele **não**
-substitui as regras específicas.
+Abra o `AGENTS.md` do lado em que você vai trabalhar e siga o arquivo de `.rules/`
+correspondente à tarefa. Este índice existe só para orientar; ele **não** substitui as
+regras específicas.
 
 Se a tarefa atravessa os dois lados (mudança de contrato de API, por exemplo), leia
 os dois `AGENTS.md` antes de começar.
@@ -28,8 +29,9 @@ os dois `AGENTS.md` antes de começar.
   `http://localhost:8080/swagger-ui.html`, OpenAPI em `/v3/api-docs`.
 - O frontend consome essa API e roda em `http://localhost:3000`.
 - Mudança incompatível de contrato vira `/api/v2` — não se altera a v1 em uso.
-- Alterou o contrato no backend? Diga explicitamente o que o frontend precisa ajustar;
-  são repositórios separados, com commits e histórico independentes.
+- Alterou o contrato no backend? Diga explicitamente o que o frontend precisa ajustar.
+  Estando os dois no mesmo repositório, nada obriga o ajuste a vir no mesmo commit — e
+  um contrato alterado de um lado só quebra silenciosamente o outro.
 
 ## Comandos por lado
 
@@ -67,12 +69,15 @@ Os três diretórios (raiz, `frontend/`, `backend/footfirma/`) têm
 - commitar segredo (PAT, chave de API, private key, URL de banco com senha, JWT)
 
 Os três `guard.mjs` são **cópias byte-idênticas**. Ao alterar um, copie por cima nos
-outros dois — os repositórios são independentes e cada um carrega o próprio guard.
+outros dois: o `settings.json` tem escopo de diretório, então cada um precisa apontar
+para um guard que exista ao seu lado. Verifique com
+`md5 -q .claude/hooks/guard.mjs frontend/.claude/hooks/guard.mjs backend/footfirma/.claude/hooks/guard.mjs | sort -u | wc -l`
+— o resultado precisa ser `1`.
 
 Bloqueio não é convite a contornar por outro caminho. Se o usuário realmente quer o
 comando, ele executa na própria sessão com `! <comando>`.
 
-## Vale para os dois repositórios
+## Vale para os dois lados
 
 - Responda e escreva commits em **português brasileiro**.
 - **Não suba serviços** sem pedido explícito (o guard bloqueia).
@@ -180,9 +185,28 @@ Duas condições para o fluxo funcionar:
 
 ## Estado atual
 
-Os dois lados estão em estágio de scaffold: o backend tem apenas
-`FootfirmaApplication` e `OpenApiConfig`, sem módulo de domínio nem migration; o
-frontend tem o layout raiz, a página inicial e o `Button` do design system. As regras
-foram escritas para **guiar a construção**, não para descrever o que já existe —
-espere criar estrutura nova seguindo os padrões, em vez de encontrar exemplos prontos
-no código.
+Status: verificado em 2026-08-03.
+
+**Os dois lados estão em estágios muito diferentes.**
+
+O **backend** saiu do scaffold. Tem seis módulos de domínio (`temporada`, `geografia`,
+`clube`, `jogador`, `competicao`, `avaliacao`), mais `config` e `shared` como módulos
+abertos, treze migrations Flyway e uma suíte de 74 testes. A API é read-only em
+`/api/v1/clubes`, `/jogadores`, `/competicoes`, `/jogadores/{slug}/overall` e
+`/rankings`. Aqui já existem exemplos prontos: ao criar um módulo novo, copie o
+formato de um existente em vez de partir do zero.
+
+O banco tem o schema completo e os seeds de país, estado, posição, característica e
+perfis de peso — e está **vazio de clubes e jogadores** até o importador do Plano 3
+rodar. Consequência prática: os endpoints respondem lista vazia e 404 em banco real, e
+isso é esperado, não defeito.
+
+O **frontend** continua em scaffold: layout raiz, página inicial, `theme-provider` e o
+`Button` do design system. Ali as regras ainda guiam a construção em vez de descrever
+o que existe.
+
+Roadmap do backend, para situar uma tarefa nova: o subsistema de catálogo foi fatiado
+em três planos — Plano 1 (schema e API read-only) e Plano 2 (avaliação e overall) estão
+executados; o Plano 3 (pipeline de dados em Python e importador) é o próximo, e a
+progressão de jogadores tem spec próprio ainda não escrito. Ver
+`docs/superpowers/specs/` e `docs/superpowers/plans/`.
