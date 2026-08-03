@@ -19,6 +19,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/clubes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/jogadores/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/competicoes/**").permitAll()
+                        // /api/v1/jogadores/** já cobre o sub-recurso /overall.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/rankings").permitAll()
                         .anyRequest().authenticated())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
