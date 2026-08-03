@@ -10,7 +10,11 @@ package br.com.api.footfirma.mundo.internal;
  */
 enum PapelNoElenco {
 
-    ESTRELA(1, 10, 14, 24, 30, "PROFISSIONAL"),
+    // +13 no piso, não +10: a média do elenco já é puxada para cima pelos nove
+    // titulares, e o ruído por skill tira até três pontos do overall materializado.
+    // Com +10 o pior sorteio produzia estrela a sete pontos da média — indistinguível
+    // de um titular de sorte.
+    ESTRELA(1, 13, 17, 24, 30, "PROFISSIONAL"),
     TITULAR(9, 2, 6, 21, 33, "PROFISSIONAL"),
     ROTATIVO(8, -2, 2, 21, 33, "PROFISSIONAL"),
     RESERVA(6, -8, -3, 19, 35, "PROFISSIONAL"),

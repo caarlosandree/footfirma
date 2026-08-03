@@ -14,4 +14,24 @@ record ClubeGerado(String slug, String nomeOficial, String nomeCurto, String ape
     int nivelElenco() {
         return (int) Math.round(0.6 * reputacao + 0.4 * forcaFinanceira);
     }
+
+    /**
+     * Índice de clube não é overall de jogador. Um clube de reputação 92 não tem
+     * elenco de overall 92: tem um elenco médio na casa dos 70 e uma estrela nos 90.
+     *
+     * <p>Sem esta compressão o topo encosta no teto de 95 e o elenco inteiro se
+     * achata contra ele — a estrela deixa de ser distinguível dos titulares, que é
+     * exatamente a propriedade que o balanceamento existe para garantir.
+     */
+    int alvoDoElenco() {
+        return comprimir(nivelElenco());
+    }
+
+    int alvoDaBase() {
+        return comprimir(qualidadeBase);
+    }
+
+    private static int comprimir(int indice) {
+        return (int) Math.round(38 + 0.45 * indice);
+    }
 }

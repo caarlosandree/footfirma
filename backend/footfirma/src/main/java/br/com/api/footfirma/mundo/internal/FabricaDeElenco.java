@@ -65,7 +65,7 @@ final class FabricaDeElenco {
     private static JogadorGerado criar(ClubeGerado clube, PapelNoElenco papel, String posicao,
                                        Integer camisa, SplittableRandom aleatorio,
                                        Set<String> chavesUsadas) {
-        var referencia = papel.daBase() ? clube.qualidadeBase() : clube.nivelElenco();
+        var referencia = papel.daBase() ? clube.alvoDaBase() : clube.alvoDoElenco();
         var alvo = limitar(referencia + entre(aleatorio, papel.deltaMinimo(), papel.deltaMaximo()));
         var idade = entre(aleatorio, papel.idadeMinima(), papel.idadeMaxima());
         var nascimento = LocalDate.of(ANO_DA_TEMPORADA - idade,
