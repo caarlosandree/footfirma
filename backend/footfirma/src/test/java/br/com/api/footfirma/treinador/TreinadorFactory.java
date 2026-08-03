@@ -6,6 +6,7 @@ import br.com.api.footfirma.treinador.domain.Treinador;
 import br.com.api.footfirma.treinador.domain.VinculoTreinador;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -59,14 +60,20 @@ public final class TreinadorFactory {
         return distribuicao;
     }
 
-    /** Distribuição válida com uma skill escolhida no teto e o resto no mínimo. */
+    /** Distribuição válida de 20 pontos: especialista 10·5·2·1·1·1, com o teto no destaque. */
     public static Map<Skill, Integer> especialistaEm(Skill destaque) {
         var distribuicao = new EnumMap<Skill, Integer>(Skill.class);
         for (var skill : Skill.values()) {
             distribuicao.put(skill, 1);
         }
+        var apoios = Arrays.stream(Skill.values())
+                .filter(skill -> skill != destaque)
+                .limit(2)
+                .toList();
+
         distribuicao.put(destaque, 10);
-        distribuicao.put(destaque == Skill.PRELECAO ? Skill.VISAO_DE_JOGO : Skill.PRELECAO, 5);
+        distribuicao.put(apoios.getFirst(), 5);
+        distribuicao.put(apoios.getLast(), 2);
         return distribuicao;
     }
 }

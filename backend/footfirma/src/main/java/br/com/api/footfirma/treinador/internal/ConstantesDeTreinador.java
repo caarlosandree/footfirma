@@ -77,6 +77,11 @@ final class ConstantesDeTreinador {
      */
     static final int SKILL_MINIMA = 1;
 
+    static final int SKILL_MAXIMA = 10;
+
+    /** Especialista gasta {@code 10·5·2·1·1·1}; generalista, {@code 4·4·3·3·3·3}. */
+    static final int PONTOS_INICIAIS = 20;
+
     static double clamp(double valor, double minimo, double maximo) {
         return Math.max(minimo, Math.min(maximo, valor));
     }

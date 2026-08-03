@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * inicial, mesma meta, mesmíssima lista de eventos. A <b>única</b> coisa que muda entre as
  * duas passagens é a reputação do clube gravada no banco.
  */
-class CongelamentoTest extends CenarioDeTreinador {
+class CongelamentoTest extends CenarioDeBorda {
 
     private static final LocalDate FIM_DA_TEMPORADA = LocalDate.of(2026, 12, 1);
 

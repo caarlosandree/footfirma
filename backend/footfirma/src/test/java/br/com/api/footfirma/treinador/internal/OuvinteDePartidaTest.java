@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.within;
 
 @RecordApplicationEvents
-class OuvinteDePartidaTest extends CenarioDeTreinador {
+class OuvinteDePartidaTest extends CenarioDeBorda {
 
     @Autowired
     ApplicationEvents publicados;

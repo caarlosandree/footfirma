@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * desfecho. É a prova de que a régua é relativa à expectativa: se alguém trocar a fórmula
  * por absoluta, este teste quebra e diz exatamente por quê.
  */
-class CampanhaSimuladaTest extends CenarioDeTreinador {
+class CampanhaSimuladaTest extends CenarioDeBorda {
 
     /** 14 vitórias, 10 empates, 14 derrotas — campanha de meio de tabela. */
     private static final List<Resultado> CAMPANHA_MEDIANA = EventoFactory.campanhaMediana();

@@ -1,7 +1,6 @@
-package br.com.api.footfirma.treinador.internal;
+package br.com.api.footfirma.treinador;
 
 import br.com.api.footfirma.TestcontainersConfiguration;
-import br.com.api.footfirma.treinador.TreinadorFactory;
 import br.com.api.footfirma.treinador.domain.StatusConfianca;
 import br.com.api.footfirma.treinador.domain.Treinador;
 import br.com.api.footfirma.treinador.domain.TreinadorJogador;
@@ -9,6 +8,7 @@ import br.com.api.footfirma.treinador.domain.VinculoTreinador;
 import br.com.api.footfirma.treinador.repository.EventoProcessadoRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorJogadorRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorRepository;
+import br.com.api.footfirma.treinador.repository.TreinadorSkillRepository;
 import br.com.api.footfirma.treinador.repository.VinculoTreinadorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,7 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * O mundo mínimo que os testes da borda precisam: país, clube, temporada, jogador e um
+ * O mundo mínimo que os testes do módulo precisam: país, clube, temporada, jogador e um
  * vínculo ativo.
  *
  * <p>Clube, temporada e jogador entram por SQL cru de propósito — são tabelas de outros
@@ -31,52 +31,53 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 @Transactional
-abstract class CenarioDeTreinador {
+public abstract class CenarioDeTreinador {
 
     @Autowired
-    OuvinteDePartida ouvinte;
+    protected TreinadorRepository treinadores;
 
     @Autowired
-    TreinadorRepository treinadores;
+    protected VinculoTreinadorRepository vinculos;
 
     @Autowired
-    VinculoTreinadorRepository vinculos;
+    protected TreinadorJogadorRepository confiancas;
 
     @Autowired
-    TreinadorJogadorRepository confiancas;
+    protected TreinadorSkillRepository skills;
 
     @Autowired
-    EventoProcessadoRepository processados;
+    protected EventoProcessadoRepository processados;
 
     @Autowired
-    JdbcTemplate jdbcTemplate;
+    protected JdbcTemplate jdbcTemplate;
 
-    Treinador treinador(String slug) {
+    protected Treinador treinador(String slug) {
         return treinadores.save(TreinadorFactory.humano(slug, paisBrasil()));
     }
 
-    VinculoTreinador vinculo(Treinador treinador, Long clubeId, double moral, int metaPosicao) {
+    protected VinculoTreinador vinculo(Treinador treinador, Long clubeId,
+                                       double moral, int metaPosicao) {
         return vinculos.save(TreinadorFactory.vinculoComMoral(
                 treinador, clubeId, temporada(), moral, metaPosicao));
     }
 
-    TreinadorJogador elenco(VinculoTreinador vinculo, Long jogadorId,
-                            StatusConfianca status, double moral) {
+    protected TreinadorJogador elenco(VinculoTreinador vinculo, Long jogadorId,
+                                      StatusConfianca status, double moral) {
         var relacao = new TreinadorJogador(vinculo, jogadorId, moral);
         relacao.setStatusConfianca(status);
         return confiancas.save(relacao);
     }
 
-    double moralDe(VinculoTreinador vinculo) {
+    protected double moralDe(VinculoTreinador vinculo) {
         return recarregar(vinculo).getMoral();
     }
 
-    VinculoTreinador recarregar(VinculoTreinador vinculo) {
+    protected VinculoTreinador recarregar(VinculoTreinador vinculo) {
         return vinculos.findById(vinculo.getId()).orElseThrow();
     }
 
     /** Marca partidas já processadas sem passar pelo ouvinte, para pular a carência. */
-    void comPartidasJogadas(VinculoTreinador vinculo, int quantidade) {
+    protected void comPartidasJogadas(VinculoTreinador vinculo, int quantidade) {
         for (var partida = 0; partida < quantidade; partida++) {
             jdbcTemplate.update("""
                     insert into treinador_evento_processado (vinculo_id, chave_evento)
@@ -85,7 +86,7 @@ abstract class CenarioDeTreinador {
         }
     }
 
-    Long clube(String slug, int reputacao) {
+    protected Long clube(String slug, int reputacao) {
         jdbcTemplate.update("""
                 insert into clube (slug, nome_oficial, nome_curto, pais_id, reputacao)
                 values (?, ?, ?, ?, ?)
@@ -94,7 +95,7 @@ abstract class CenarioDeTreinador {
         return jdbcTemplate.queryForObject("select id from clube where slug = ?", Long.class, slug);
     }
 
-    Long jogador(String slug) {
+    protected Long jogador(String slug) {
         jdbcTemplate.update("""
                 insert into jogador (slug, chave_natural, nome_completo, nome_exibicao,
                                      data_nascimento, pais_id, pe_preferido,
@@ -106,7 +107,7 @@ abstract class CenarioDeTreinador {
         return jdbcTemplate.queryForObject("select id from jogador where slug = ?", Long.class, slug);
     }
 
-    Long temporada() {
+    protected Long temporada() {
         jdbcTemplate.update("""
                 insert into temporada (label, ano_inicio, ano_fim) values ('2026', 2026, 2026)
                 on conflict (label) do nothing
@@ -115,7 +116,7 @@ abstract class CenarioDeTreinador {
                 "select id from temporada where label = '2026'", Long.class);
     }
 
-    Long paisBrasil() {
+    protected Long paisBrasil() {
         return jdbcTemplate.queryForObject(
                 "select id from pais where iso_code = 'BRA'", Long.class);
     }
