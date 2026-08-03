@@ -1,5 +1,6 @@
 package br.com.api.footfirma.mundo.internal;
 
+import br.com.api.footfirma.avaliacao.AvaliacaoService;
 import br.com.api.footfirma.clube.ClubeService;
 import br.com.api.footfirma.clube.dto.DadosDeClube;
 import br.com.api.footfirma.clube.dto.DadosDeEstadio;
@@ -10,6 +11,12 @@ import br.com.api.footfirma.competicao.dto.DadosDeFase;
 import br.com.api.footfirma.competicao.dto.DadosDeParticipante;
 import br.com.api.footfirma.competicao.dto.DadosDeRegra;
 import br.com.api.footfirma.geografia.GeografiaService;
+import br.com.api.footfirma.jogador.JogadorService;
+import br.com.api.footfirma.jogador.dto.DadosDeAtributos;
+import br.com.api.footfirma.jogador.dto.DadosDeAtributosOcultos;
+import br.com.api.footfirma.jogador.dto.DadosDeJogador;
+import br.com.api.footfirma.jogador.dto.DadosDeVinculo;
+import br.com.api.footfirma.jogador.dto.PosicaoCatalogo;
 import br.com.api.footfirma.mundo.MundoService;
 import br.com.api.footfirma.mundo.dto.ContagemPorEntidade;
 import br.com.api.footfirma.mundo.dto.RelatorioDeMundo;
@@ -19,14 +26,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.SplittableRandom;
+import java.util.stream.Collectors;
 
 @Service
 @EnableConfigurationProperties(PropriedadesDeMundo.class)
@@ -39,12 +50,23 @@ class MundoServiceImpl implements MundoService {
     private final TemporadaService temporadaService;
     private final CompeticaoService competicaoService;
     private final ClubeService clubeService;
+    private final JogadorService jogadorService;
+    private final AvaliacaoService avaliacaoService;
     private final GeografiaService geografiaService;
     private final PropriedadesDeMundo propriedades;
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Sem transação envolvente, de propósito. Cada {@code sincronizar*} abre a sua, e
+     * a geração inteira num único commit seria errada por dois motivos: seguraria a
+     * conexão por minutos, e {@code AvaliacaoService.materializar} é
+     * {@code NOT_SUPPORTED} — ela suspende a transação corrente, então não enxergaria
+     * nenhum dos 1.520 atributos ainda não commitados e gravaria zero overall.
+     *
+     * <p>O preço é que uma falha no meio deixa mundo parcial. É o que
+     * {@code footfirma.mundo.recriar} resolve.
+     */
     @Override
-    @Transactional
     public RelatorioDeMundo gerar() {
         if (propriedades.recriar()) {
             LimpezaDoCatalogo.executar(jdbcTemplate);
@@ -59,6 +81,10 @@ class MundoServiceImpl implements MundoService {
         var idsPorSlug = new HashMap<String, Long>();
         var clubes = criarClubes(paisId, idsPorSlug, contagens);
         vincularParticipantes(clubes, idsPorSlug, edicaoPorDivisao, contagens);
+        criarElencos(clubes, idsPorSlug, temporadaId, paisId, contagens);
+
+        var materializacao = avaliacaoService.materializar(TEMPORADA);
+        contagens.add(new ContagemPorEntidade("jogador_overall", materializacao.linhas(), 0));
         return new RelatorioDeMundo(propriedades.semente(), TEMPORADA, List.copyOf(contagens));
     }
 
@@ -134,6 +160,71 @@ class MundoServiceImpl implements MundoService {
         clubes.forEach(clube -> competicaoService.sincronizarParticipante(new DadosDeParticipante(
                 edicaoPorDivisao.get(clube.divisao()), idsPorSlug.get(clube.slug()), null)));
         contagens.add(new ContagemPorEntidade("edicao_participante", clubes.size(), 0));
+    }
+
+    private void criarElencos(List<ClubeGerado> clubes, Map<String, Long> idsPorSlug,
+                              Long temporadaId, Long paisId, List<ContagemPorEntidade> contagens) {
+        var posicoes = jogadorService.listarPosicoes().stream()
+                .collect(Collectors.toMap(PosicaoCatalogo::codigo, PosicaoCatalogo::id));
+        var chavesUsadas = new HashSet<String>();
+        var total = 0;
+        for (var clube : clubes) {
+            // Um sub-gerador por clube: mexer no clube 7 não pode deslocar o 8, ou
+            // qualquer ajuste reescreveria o mundo inteiro e o diff ficaria ilegível.
+            var aleatorio = new SplittableRandom(propriedades.semente() + clube.slug().hashCode());
+            for (var jogador : FabricaDeElenco.gerar(clube, aleatorio, chavesUsadas)) {
+                gravarJogador(jogador, clube, idsPorSlug, posicoes, temporadaId, paisId, aleatorio);
+                total++;
+            }
+        }
+        contagens.add(new ContagemPorEntidade("jogador", total, 0));
+    }
+
+    private void gravarJogador(JogadorGerado jogador, ClubeGerado clube,
+                               Map<String, Long> idsPorSlug, Map<String, Long> posicoes,
+                               Long temporadaId, Long paisId, SplittableRandom aleatorio) {
+        var jogadorId = jogadorService.sincronizarJogador(new DadosDeJogador(
+                jogador.slug(), jogador.chaveNatural(), jogador.semente(),
+                jogador.nomeCompleto(), jogador.nomeExibicao(), jogador.dataNascimento(),
+                paisId, null, jogador.alturaCm(), jogador.pesoKg(), jogador.pePreferido(),
+                posicoes.get(jogador.posicao()), "GERADO")).id();
+
+        var skills = FabricaDeAtributos.gerar(jogador.posicao(), jogador.alvoOverall(), aleatorio);
+        jogadorService.sincronizarAtributos(new DadosDeAtributos(
+                jogadorId, temporadaId,
+                skills.ritmo(), skills.forca(), skills.folego(), skills.salto(), skills.agilidade(),
+                skills.passe(), skills.drible(), skills.cruzamento(), skills.frieza(),
+                skills.finalizacao(), skills.cabeceio(), skills.falta(), skills.penalti(),
+                skills.desarme(), skills.marcacao(), skills.golReflexo(),
+                skills.golPosicionamento(), skills.golManejo(),
+                jogador.potencialBase(), jogador.potencialVariacao(),
+                "GERADO", OffsetDateTime.now()));
+
+        // Atributo oculto nasce da semente do jogador, não do sorteio do clube: é
+        // personalidade, e personalidade não muda de time.
+        var daSemente = new SplittableRandom(jogador.semente());
+        jogadorService.sincronizarAtributosOcultos(new DadosDeAtributosOcultos(
+                jogadorId, daSemente.nextInt(20, 100), daSemente.nextInt(20, 100),
+                daSemente.nextInt(20, 100), daSemente.nextInt(20, 100), daSemente.nextInt(20, 100),
+                daSemente.nextInt(20, 100), daSemente.nextInt(20, 100), daSemente.nextInt(20, 100)));
+
+        jogadorService.sincronizarVinculo(new DadosDeVinculo(
+                jogadorId, idsPorSlug.get(clube.slug()), temporadaId, "CONTRATO",
+                jogador.categoria(), jogador.numeroCamisa(),
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                valorDeMercado(jogador)));
+    }
+
+    /**
+     * Valor cresce com overall e com o espaço até o potencial, e cai com a idade.
+     * Não depende da riqueza do clube: valor de mercado é atributo do jogador.
+     */
+    private BigDecimal valorDeMercado(JogadorGerado jogador) {
+        var idade = 2026 - jogador.dataNascimento().getYear();
+        var base = Math.pow(jogador.alvoOverall() / 10.0, 4) * 1_200;
+        var promessa = 1 + (jogador.potencialBase() - jogador.alvoOverall()) * 0.05;
+        var desgaste = idade <= 27 ? 1.0 : Math.max(0.25, 1 - (idade - 27) * 0.12);
+        return BigDecimal.valueOf(base * promessa * desgaste).setScale(2, RoundingMode.HALF_UP);
     }
 
     record LigaCriada(Long competicaoId, Long edicaoId) {
