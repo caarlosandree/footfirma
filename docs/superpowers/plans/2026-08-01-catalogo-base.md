@@ -62,16 +62,17 @@ Migrations, em ordem:
 
 | Arquivo | Cria |
 |---|---|
-| `V1__cria_temporada.sql` | `temporada` |
-| `V2__cria_geografia.sql` | `pais`, `estado` |
-| `V3__popula_geografia.sql` | Brasil + 27 unidades federativas |
-| `V4__cria_clube.sql` | `estadio`, `clube`, `clube_alias`, `clube_referencia_externa` |
-| `V5__cria_jogador.sql` | `posicao`, `jogador`, `jogador_posicao`, `jogador_referencia_externa` |
-| `V6__popula_posicao.sql` | as 9 posições |
-| `V7__cria_jogador_atributo.sql` | `jogador_atributo`, `jogador_atributo_oculto` |
-| `V8__cria_caracteristica_e_vinculo.sql` | `caracteristica`, `jogador_caracteristica`, `jogador_vinculo` |
-| `V9__cria_competicao.sql` | `competicao`, `edicao`, `fase`, `competicao_referencia_externa` |
-| `V10__cria_participante_e_regra.sql` | `edicao_participante`, `regra_classificacao` |
+| `V1__cria_event_publication.sql` | `event_publication` (registro de eventos do Modulith) |
+| `V2__cria_temporada.sql` | `temporada` |
+| `V3__cria_geografia.sql` | `pais`, `estado` |
+| `V4__popula_geografia.sql` | Brasil + 27 unidades federativas |
+| `V5__cria_clube.sql` | `estadio`, `clube`, `clube_alias`, `clube_referencia_externa` |
+| `V6__cria_jogador.sql` | `posicao`, `jogador`, `jogador_posicao`, `jogador_referencia_externa` |
+| `V7__popula_posicao.sql` | as 9 posições |
+| `V8__cria_jogador_atributo.sql` | `jogador_atributo`, `jogador_atributo_oculto` |
+| `V9__cria_caracteristica_e_vinculo.sql` | `caracteristica`, `jogador_caracteristica`, `jogador_vinculo` |
+| `V10__cria_competicao.sql` | `competicao`, `edicao`, `fase`, `competicao_referencia_externa` |
+| `V11__cria_participante_e_regra.sql` | `edicao_participante`, `regra_classificacao` |
 
 ---
 
@@ -85,6 +86,7 @@ Prepara o terreno: declara os módulos abertos existentes, torna a configuraçã
 - Create: `src/main/java/br/com/api/footfirma/shared/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/shared/exception/RecursoNaoEncontradoException.java`
 - Create: `src/main/java/br/com/api/footfirma/shared/exception/TratadorDeErros.java`
+- Create: `src/main/resources/db/migration/V1__cria_event_publication.sql`
 - Modify: `src/test/java/br/com/api/footfirma/TestcontainersConfiguration.java` (visibilidade)
 - Modify: `src/main/resources/application.properties`
 - Test: `src/test/java/br/com/api/footfirma/ModularidadeTest.java`
@@ -261,13 +263,17 @@ spring.threads.virtual.enabled=true
 - [ ] **Step 7: Compilar e rodar os testes existentes**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*FootfirmaApplicationTests'`
-Expected: PASS nos dois. Se `FootfirmaApplicationTests` falhar por schema vazio, é esperado até a Task 2 — nesse caso confirme que o erro é de Flyway sem migrations e siga.
+Expected: PASS nos dois — a `V1__cria_event_publication.sql` é o que sustenta o
+`FootfirmaApplicationTests` verde. Sem ela, `ddl-auto=validate` derruba o contexto com
+`missing table [event_publication]`: o `spring-modulith-starter-jpa` mapeia a entidade
+`DefaultJpaEventPublication` para essa tabela e ela precisa existir desde o começo.
 
 - [ ] **Step 8: Commit**
 
 ```bash
 git add src/main/java/br/com/api/footfirma/config src/main/java/br/com/api/footfirma/shared \
         src/main/resources/application.properties \
+        src/main/resources/db/migration/V1__cria_event_publication.sql \
         src/test/java/br/com/api/footfirma/ModularidadeTest.java \
         src/test/java/br/com/api/footfirma/TestcontainersConfiguration.java
 git commit -m "feat(config): adiciona fundação de modularidade, segurança e erros
@@ -276,7 +282,8 @@ git commit -m "feat(config): adiciona fundação de modularidade, segurança e e
 - Cria ModularidadeTest para guardar as fronteiras desde o início
 - Adiciona TratadorDeErros com ProblemDetail (RFC 9457)
 - SecurityConfig libera leitura do catálogo rota a rota
-- Fixa ddl-auto=validate: o schema passa a ser só do Flyway"
+- Fixa ddl-auto=validate: o schema passa a ser só do Flyway
+- Migration V1 cria event_publication, exigida pelo Modulith sob validate"
 ```
 
 ---
@@ -286,7 +293,7 @@ git commit -m "feat(config): adiciona fundação de modularidade, segurança e e
 Menor módulo do sistema e o primeiro a ser criado porque `jogador` e `competicao` dependem dele. Estabelece o padrão que todos os outros módulos seguem.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V1__cria_temporada.sql`
+- Create: `src/main/resources/db/migration/V2__cria_temporada.sql`
 - Create: `src/main/java/br/com/api/footfirma/temporada/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/temporada/TemporadaService.java`
 - Create: `src/main/java/br/com/api/footfirma/temporada/dto/TemporadaResumo.java`
@@ -301,7 +308,7 @@ Menor módulo do sistema e o primeiro a ser criado porque `jogador` e `competica
 
 - [ ] **Step 1: Escrever a migration**
 
-`src/main/resources/db/migration/V1__cria_temporada.sql`:
+`src/main/resources/db/migration/V2__cria_temporada.sql`:
 
 ```sql
 -- Temporada é referenciada por jogador_atributo, jogador_vinculo e edicao.
@@ -570,7 +577,7 @@ Expected: PASS. Se o MapStruct reclamar de campo não mapeado, é o `unmappedTar
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/main/resources/db/migration/V1__cria_temporada.sql \
+git add src/main/resources/db/migration/V2__cria_temporada.sql \
         src/main/java/br/com/api/footfirma/temporada \
         src/test/java/br/com/api/footfirma/temporada
 git commit -m "feat(temporada): cria módulo de temporada
@@ -579,7 +586,7 @@ Primeiro módulo de domínio do projeto. Estabelece o padrão que os demais
 seguem: interface pública na raiz, entidade e repositório em subpacotes
 internos, DTO via MapStruct.
 
-- Migration V1 cria a tabela temporada
+- Migration V2 cria a tabela temporada
 - TemporadaService expõe busca por label e listagem ordenada"
 ```
 
@@ -590,8 +597,8 @@ internos, DTO via MapStruct.
 País e unidade federativa. Referenciado por `clube` e `jogador`. Inclui seed dos dados reais, porque país e UF são catálogo estável — não dependem do pipeline de importação.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V2__cria_geografia.sql`
-- Create: `src/main/resources/db/migration/V3__popula_geografia.sql`
+- Create: `src/main/resources/db/migration/V3__cria_geografia.sql`
+- Create: `src/main/resources/db/migration/V4__popula_geografia.sql`
 - Create: `src/main/java/br/com/api/footfirma/geografia/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/geografia/GeografiaService.java`
 - Create: `src/main/java/br/com/api/footfirma/geografia/dto/PaisResumo.java`
@@ -610,7 +617,7 @@ País e unidade federativa. Referenciado por `clube` e `jogador`. Inclui seed do
 
 - [ ] **Step 1: Escrever as migrations**
 
-`src/main/resources/db/migration/V2__cria_geografia.sql`:
+`src/main/resources/db/migration/V3__cria_geografia.sql`:
 
 ```sql
 create table pais (
@@ -632,7 +639,7 @@ create table estado (
 create index idx_estado_pais on estado (pais_id);
 ```
 
-`src/main/resources/db/migration/V3__popula_geografia.sql`:
+`src/main/resources/db/migration/V4__popula_geografia.sql`:
 
 ```sql
 -- País e unidade federativa são catálogo estável: não dependem do pipeline de
@@ -900,7 +907,7 @@ public interface EstadoRepository extends JpaRepository<Estado, Long> {
 - [ ] **Step 5: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*GeografiaRepositoryTest'`
-Expected: PASS. Os 27 estados vêm da migration de seed, não do teste — se vier 0, a `V3` não rodou; confira o log do Flyway na saída.
+Expected: PASS. Os 27 estados vêm da migration de seed, não do teste — se vier 0, a `V4` não rodou; confira o log do Flyway na saída.
 
 - [ ] **Step 6: Criar DTOs, mapper e serviço público**
 
@@ -1012,14 +1019,14 @@ Expected: PASS.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/main/resources/db/migration/V2__cria_geografia.sql \
-        src/main/resources/db/migration/V3__popula_geografia.sql \
+git add src/main/resources/db/migration/V3__cria_geografia.sql \
+        src/main/resources/db/migration/V4__popula_geografia.sql \
         src/main/java/br/com/api/footfirma/geografia \
         src/test/java/br/com/api/footfirma/geografia
 git commit -m "feat(geografia): cria módulo de país e unidade federativa
 
-- Migration V2 cria pais e estado
-- Migration V3 popula Brasil e as 27 UFs como seed versionado, por serem
+- Migration V3 cria pais e estado
+- Migration V4 popula Brasil e as 27 UFs como seed versionado, por serem
   catálogo estável que não depende do pipeline de importação
 - GeografiaService expõe busca de país por ISO e listagem de estados"
 ```
@@ -1031,7 +1038,7 @@ git commit -m "feat(geografia): cria módulo de país e unidade federativa
 Clube, estádio, aliases de nome e referência externa. Os aliases resolvem "Atlético-MG" / "Atlético Mineiro" / "Clube Atlético Mineiro" para o mesmo clube — sem eles, o importador do Plano 3 duplica clubes a cada fonte nova.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V4__cria_clube.sql`
+- Create: `src/main/resources/db/migration/V5__cria_clube.sql`
 - Create: `src/main/java/br/com/api/footfirma/clube/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/clube/ClubeService.java`
 - Create: `src/main/java/br/com/api/footfirma/clube/dto/ClubeResumo.java`
@@ -1056,7 +1063,7 @@ Clube, estádio, aliases de nome e referência externa. Os aliases resolvem "Atl
 
 - [ ] **Step 1: Escrever a migration**
 
-`src/main/resources/db/migration/V4__cria_clube.sql`:
+`src/main/resources/db/migration/V5__cria_clube.sql`:
 
 ```sql
 create table estadio (
@@ -1670,12 +1677,12 @@ Expected: PASS. Se `ModularidadeTest` acusar dependência de `clube` para `geogr
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/main/resources/db/migration/V4__cria_clube.sql \
+git add src/main/resources/db/migration/V5__cria_clube.sql \
         src/main/java/br/com/api/footfirma/clube \
         src/test/java/br/com/api/footfirma/clube
 git commit -m "feat(clube): cria módulo de clube, estádio e aliases
 
-- Migration V4 cria estadio, clube, clube_alias e clube_referencia_externa
+- Migration V5 cria estadio, clube, clube_alias e clube_referencia_externa
 - Aliases resolvem variações de nome entre fontes, evitando clube duplicado
   na importação do Plano 3
 - FKs para pais e estado são colunas Long, não @ManyToOne: entidade JPA não
@@ -1689,8 +1696,8 @@ git commit -m "feat(clube): cria módulo de clube, estádio e aliases
 Primeira das três tarefas do módulo maior do sistema. Cria as posições (seed fixo) e a entidade central do jogo.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V5__cria_jogador.sql`
-- Create: `src/main/resources/db/migration/V6__popula_posicao.sql`
+- Create: `src/main/resources/db/migration/V6__cria_jogador.sql`
+- Create: `src/main/resources/db/migration/V7__popula_posicao.sql`
 - Create: `src/main/java/br/com/api/footfirma/jogador/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/Posicao.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/Setor.java`
@@ -1709,7 +1716,7 @@ Primeira das três tarefas do módulo maior do sistema. Cria as posições (seed
 
 - [ ] **Step 1: Escrever as migrations**
 
-`src/main/resources/db/migration/V5__cria_jogador.sql`:
+`src/main/resources/db/migration/V6__cria_jogador.sql`:
 
 ```sql
 create table posicao (
@@ -1767,7 +1774,7 @@ create table jogador_referencia_externa (
 create index idx_jogador_referencia_externa_jogador on jogador_referencia_externa (jogador_id);
 ```
 
-`src/main/resources/db/migration/V6__popula_posicao.sql`:
+`src/main/resources/db/migration/V7__popula_posicao.sql`:
 
 ```sql
 -- As 9 posições são catálogo fixo: o modelo de overall do Plano 2 tem um perfil
@@ -2252,14 +2259,14 @@ Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
 
 ```bash
-git add src/main/resources/db/migration/V5__cria_jogador.sql \
-        src/main/resources/db/migration/V6__popula_posicao.sql \
+git add src/main/resources/db/migration/V6__cria_jogador.sql \
+        src/main/resources/db/migration/V7__popula_posicao.sql \
         src/main/java/br/com/api/footfirma/jogador \
         src/test/java/br/com/api/footfirma/jogador
 git commit -m "feat(jogador): cria posição e dados pessoais do jogador
 
-- Migration V5 cria posicao, jogador, jogador_posicao e a referência externa
-- Migration V6 popula as 9 posições como catálogo fixo
+- Migration V6 cria posicao, jogador, jogador_posicao e a referência externa
+- Migration V7 popula as 9 posições como catálogo fixo
 - chave_natural com unique é a garantia de idempotência da importação:
   reimportar o mesmo jogador não pode criar uma segunda linha
 - semente determinística será a origem dos atributos ocultos no Plano 2"
@@ -2272,7 +2279,7 @@ git commit -m "feat(jogador): cria posição e dados pessoais do jogador
 As 18 skills versionadas por temporada, mais os 8 atributos ocultos de personalidade. É a tabela que o Plano 2 consome para calcular overall.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V7__cria_jogador_atributo.sql`
+- Create: `src/main/resources/db/migration/V8__cria_jogador_atributo.sql`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/JogadorAtributo.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/JogadorAtributoOculto.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/FonteAtributo.java`
@@ -2286,7 +2293,7 @@ As 18 skills versionadas por temporada, mais os 8 atributos ocultos de personali
 
 - [ ] **Step 1: Escrever a migration**
 
-`src/main/resources/db/migration/V7__cria_jogador_atributo.sql`:
+`src/main/resources/db/migration/V8__cria_jogador_atributo.sql`:
 
 ```sql
 -- Atributos são versionados por temporada: o mesmo jogador em 2025 e 2026 são
@@ -2739,12 +2746,12 @@ Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
 
 ```bash
-git add src/main/resources/db/migration/V7__cria_jogador_atributo.sql \
+git add src/main/resources/db/migration/V8__cria_jogador_atributo.sql \
         src/main/java/br/com/api/footfirma/jogador \
         src/test/java/br/com/api/footfirma/jogador
 git commit -m "feat(jogador): adiciona as 18 skills e os atributos ocultos
 
-- Migration V7 cria jogador_atributo (versionado por temporada) e
+- Migration V8 cria jogador_atributo (versionado por temporada) e
   jogador_atributo_oculto (estável por jogador)
 - Escala 0-99 garantida por check no banco, não só por validação Java
 - unique (jogador_id, temporada_id) impede dois conjuntos na mesma temporada
@@ -2758,7 +2765,7 @@ git commit -m "feat(jogador): adiciona as 18 skills e os atributos ocultos
 Fecha o módulo `jogador`. As características são as skills especiais (voleio, bicicleta, cobrança de falta); o vínculo é o elenco de cada clube por temporada, e é o que a API de elenco consulta.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V8__cria_caracteristica_e_vinculo.sql`
+- Create: `src/main/resources/db/migration/V9__cria_caracteristica_e_vinculo.sql`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/Caracteristica.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/CategoriaCaracteristica.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/JogadorCaracteristica.java`
@@ -2774,7 +2781,7 @@ Fecha o módulo `jogador`. As características são as skills especiais (voleio,
 
 - [ ] **Step 1: Escrever a migration**
 
-`src/main/resources/db/migration/V8__cria_caracteristica_e_vinculo.sql`:
+`src/main/resources/db/migration/V9__cria_caracteristica_e_vinculo.sql`:
 
 ```sql
 -- Características são as skills especiais importadas dos Traits/PlayStyles da
@@ -3242,12 +3249,12 @@ Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
 
 ```bash
-git add src/main/resources/db/migration/V8__cria_caracteristica_e_vinculo.sql \
+git add src/main/resources/db/migration/V9__cria_caracteristica_e_vinculo.sql \
         src/main/java/br/com/api/footfirma/jogador \
         src/test/java/br/com/api/footfirma/jogador
 git commit -m "feat(jogador): adiciona características especiais e vínculo com clube
 
-- Migration V8 cria caracteristica (com as 13 do catálogo), a associação com
+- Migration V9 cria caracteristica (com as 13 do catálogo), a associação com
   jogador e jogador_vinculo
 - buscarElenco usa join fetch duplo para evitar N+1 ao listar um elenco
 - Vínculo é por temporada: o mesmo jogador pode trocar de clube no ano"
@@ -3260,8 +3267,8 @@ git commit -m "feat(jogador): adiciona características especiais e vínculo com
 Competição, edição por temporada, fases e participantes — mais as regras de classificação, que são a decisão de design central deste módulo: acesso, rebaixamento e vaga continental são **dados**, não código. Um campeonato com formato novo é um `INSERT`, não uma classe nova.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V9__cria_competicao.sql`
-- Create: `src/main/resources/db/migration/V10__cria_participante_e_regra.sql`
+- Create: `src/main/resources/db/migration/V10__cria_competicao.sql`
+- Create: `src/main/resources/db/migration/V11__cria_participante_e_regra.sql`
 - Create: `src/main/java/br/com/api/footfirma/competicao/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/competicao/CompeticaoService.java`
 - Create: `src/main/java/br/com/api/footfirma/competicao/dto/CompeticaoResumo.java`
@@ -3280,7 +3287,7 @@ Competição, edição por temporada, fases e participantes — mais as regras d
 
 - [ ] **Step 1: Escrever as migrations**
 
-`src/main/resources/db/migration/V9__cria_competicao.sql`:
+`src/main/resources/db/migration/V10__cria_competicao.sql`:
 
 ```sql
 create table competicao (
@@ -3337,7 +3344,7 @@ create table competicao_referencia_externa (
 create index idx_competicao_referencia_externa_competicao on competicao_referencia_externa (competicao_id);
 ```
 
-`src/main/resources/db/migration/V10__cria_participante_e_regra.sql`:
+`src/main/resources/db/migration/V11__cria_participante_e_regra.sql`:
 
 ```sql
 create table edicao_participante (
@@ -4150,13 +4157,13 @@ Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --test
 Expected: PASS. `competicao` agora depende de `temporada` pela interface pública — dependência legítima e visível na documentação gerada pelo `Documenter`.
 
 ```bash
-git add src/main/resources/db/migration/V9__cria_competicao.sql \
-        src/main/resources/db/migration/V10__cria_participante_e_regra.sql \
+git add src/main/resources/db/migration/V10__cria_competicao.sql \
+        src/main/resources/db/migration/V11__cria_participante_e_regra.sql \
         src/main/java/br/com/api/footfirma/competicao \
         src/test/java/br/com/api/footfirma/competicao
 git commit -m "feat(competicao): cria módulo de competição, edição e fases
 
-- Migrations V9 e V10 criam competicao, edicao, fase, edicao_participante
+- Migrations V10 e V11 criam competicao, edicao, fase, edicao_participante
   e regra_classificacao
 - Regra de acesso, rebaixamento e vaga continental é dado: campeonato com
   formato novo é INSERT, não classe nova
