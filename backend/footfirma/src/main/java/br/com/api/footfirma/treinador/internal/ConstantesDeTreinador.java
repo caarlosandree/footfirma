@@ -79,6 +79,27 @@ final class ConstantesDeTreinador {
 
     static final int SKILL_MAXIMA = 10;
 
+    // --- Evolução de carreira ---
+
+    /** Demitido ainda ganha 1: fracasso ensina, e zerar quem já está mal só afunda mais. */
+    static final int PONTOS_META_BATIDA = 3;
+    static final int PONTOS_SOBREVIVEU = 2;
+    static final int PONTOS_DEMITIDO = 1;
+
+    static final double REPUTACAO_POR_POSICAO = 0.8;
+    static final double REPUTACAO_DELTA_MIN = -8.0;
+    static final double REPUTACAO_DELTA_MAX = 10.0;
+
+    /**
+     * A demissão é medida pelo próprio fato, não pela classificação: o clube terminou o
+     * ano com outro treinador, e cobrar do demitido a posição final seria cobrá-lo por
+     * uma campanha que ele não dirigiu.
+     */
+    static final int REPUTACAO_POR_DEMISSAO = -5;
+
+    static final int REPUTACAO_MIN = 0;
+    static final int REPUTACAO_MAX = 99;
+
     // --- Mercado ---
 
     /** Quem se afasta demais da reputação do clube nem entra na lista de candidatos. */
