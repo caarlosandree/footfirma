@@ -1,9 +1,8 @@
 package br.com.api.footfirma.clube.dto;
 
 /**
- * Entrada de ingestão. Espelha uma linha de {@code clube.csv}, com país, estado e
- * estádio já resolvidos em id pelo importador — resolver aqui faria o módulo clube
- * depender de geografia para escrever.
+ * Entrada de ingestão, com país, estado e estádio já resolvidos em id por quem
+ * chama — resolver aqui faria o módulo clube depender de geografia para escrever.
  */
 public record DadosDeClube(String slug, String nomeOficial, String nomeCurto, String apelido,
                            Integer anoFundacao, Long paisId, Long estadoId, Long estadioId,

@@ -88,18 +88,6 @@ tasks.withType(JavaCompile).configureEach {
     ]
 }
 
-// Regenera fixtures/v1. Não roda na suíte: o resultado é versionado, e regerar a
-// cada build produziria diff em todo commit.
-tasks.register('gerarFixtures', JavaExec) {
-    group = 'footfirma'
-    description = 'Regenera fixtures/v1 (15 CSVs + manifest.json)'
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'br.com.api.footfirma.importacao.internal.GeradorDeFixtures'
-    args = [file('fixtures/v1').absolutePath]
-}
-
 tasks.named('test') {
     useJUnitPlatform()
-    // Torna o caminho das fixtures independente do working directory do teste
-    systemProperty 'footfirma.fixtures', file('fixtures/v1').absolutePath
 }

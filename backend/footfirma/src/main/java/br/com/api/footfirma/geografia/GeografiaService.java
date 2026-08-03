@@ -13,8 +13,8 @@ public interface GeografiaService {
     List<EstadoResumo> listarEstadosDoPais(String isoCode);
 
     /**
-     * Traduz {@code uf} em id de estado. O importador precisa disso porque o
-     * dataset referencia estado por sigla, e as tabelas por chave estrangeira.
+     * Traduz {@code uf} em id de estado. O gerador de mundo precisa disso porque
+     * declara estado por sigla, e as tabelas o guardam por chave estrangeira.
      */
     Optional<EstadoResumo> buscarEstadoPorUf(String isoPais, String uf);
 }

@@ -168,7 +168,7 @@ class JogadorServiceImpl implements JogadorService {
                 jogador.getPosicaoPrincipal().getCodigo(),
                 jogador.getOrigem().name(),
                 atributos,
-                // Vazia até o importador do Plano 3 preencher jogador_caracteristica.
+                // Vazia até o gerador de mundo preencher jogador_caracteristica.
                 // Devolver lista vazia é honesto; inventar dado não seria.
                 List.of());
     }

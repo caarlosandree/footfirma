@@ -1,7 +1,0 @@
-competicao_slug,temporada,ordem,nome,tipo,jogos_por_confronto,tem_gol_fora,tem_prorrogacao,tem_penaltis
-brasileirao-serie-a,2025,1,Turno e returno,PONTOS_CORRIDOS,2,false,false,false
-brasileirao-serie-a,2026,1,Turno e returno,PONTOS_CORRIDOS,2,false,false,false
-copa-do-brasil,2026,1,Oitavas de final,ELIMINATORIA,2,false,true,true
-copa-do-brasil,2026,2,Quartas de final,ELIMINATORIA,2,false,true,true
-copa-do-brasil,2026,3,Semifinal,ELIMINATORIA,2,false,true,true
-copa-do-brasil,2026,4,Final,ELIMINATORIA,2,false,true,true
