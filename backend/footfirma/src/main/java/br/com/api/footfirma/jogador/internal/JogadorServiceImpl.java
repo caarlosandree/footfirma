@@ -5,10 +5,12 @@ import br.com.api.footfirma.jogador.JogadorService;
 import br.com.api.footfirma.jogador.domain.Jogador;
 import br.com.api.footfirma.jogador.dto.JogadorDetalhe;
 import br.com.api.footfirma.jogador.dto.JogadorResumo;
+import br.com.api.footfirma.jogador.dto.PosicaoCatalogo;
 import br.com.api.footfirma.jogador.mapper.JogadorMapper;
 import br.com.api.footfirma.jogador.repository.JogadorAtributoRepository;
 import br.com.api.footfirma.jogador.repository.JogadorRepository;
 import br.com.api.footfirma.jogador.repository.JogadorVinculoRepository;
+import br.com.api.footfirma.jogador.repository.PosicaoRepository;
 import br.com.api.footfirma.temporada.TemporadaService;
 import br.com.api.footfirma.temporada.dto.TemporadaResumo;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ class JogadorServiceImpl implements JogadorService {
     private final JogadorRepository jogadorRepository;
     private final JogadorAtributoRepository jogadorAtributoRepository;
     private final JogadorVinculoRepository jogadorVinculoRepository;
+    private final PosicaoRepository posicaoRepository;
     private final TemporadaService temporadaService;
     private final ClubeService clubeService;
     private final JogadorMapper jogadorMapper;
@@ -57,6 +60,17 @@ class JogadorServiceImpl implements JogadorService {
                         idadeEm(vinculo.getJogador().getDataNascimento()),
                         vinculo.getJogador().getPosicaoPrincipal().getCodigo(),
                         vinculo.getNumeroCamisa()))
+                .toList();
+    }
+
+    @Override
+    public List<PosicaoCatalogo> listarPosicoes() {
+        return posicaoRepository.findAllByOrderByOrdem().stream()
+                .map(posicao -> new PosicaoCatalogo(
+                        posicao.getId(),
+                        posicao.getCodigo(),
+                        posicao.getNome(),
+                        posicao.getSetor().name()))
                 .toList();
     }
 
