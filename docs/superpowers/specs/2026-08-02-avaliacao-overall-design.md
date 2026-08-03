@@ -47,6 +47,21 @@ A consequência aceita é que, em banco real, os endpoints deste ciclo respondem
 vazia e 404 até a carga acontecer. Os testes provam o comportamento com fixtures; a API
 só fica útil depois do Plano 3. Isso é consequência da ordem escolhida, não descuido.
 
+## Desvios reconhecidos do spec do catálogo
+
+Dois, ambos deliberados:
+
+**1. `avaliacao` depende de `jogador` e `temporada`; o spec original declarava apenas
+`player`.** A dependência de `temporada` vem da chave estrangeira `temporada_id` em
+`jogador_overall` e da resolução do label de temporada recebido pela API. Ela é real e
+inevitável, não conveniência.
+
+**2. A materialização muda de dono.** O spec original diz que o overall é "materializado
+em `player_overall` pelo importador". Aqui a materialização é
+`AvaliacaoService.materializar(...)`, e o importador do Plano 3 apenas a invoca. É a
+aplicação correta da regra estrutural que o próprio spec estabelece — "`dataimport` não
+escreve em tabela alheia" — mas é uma mudança de desenho, não uma continuidade.
+
 ---
 
 ## Arquitetura de módulos
@@ -59,7 +74,7 @@ Nada depende dele.
 avaliacao/
 ├── package-info.java              # @ApplicationModule(displayName = "Avaliação")
 ├── AvaliacaoService.java          # única porta pública do módulo
-├── dto/                           # OverallDoJogador, ItemDeRanking, ResultadoMaterializacao
+├── dto/                           # AvaliacoesDoJogador, ItemDeRanking, ResultadoMaterializacao
 ├── domain/                        # PerfilAvaliacao, PerfilAvaliacaoPeso, JogadorOverall, AtributoAvaliavel
 ├── repository/
 ├── mapper/
@@ -72,7 +87,7 @@ A porta pública do módulo, inteira:
 ```java
 public interface AvaliacaoService {
 
-    Optional<OverallDoJogador> buscarPorSlug(String slug, String labelTemporada);
+    Optional<AvaliacoesDoJogador> buscarPorSlug(String slug, String labelTemporada);
 
     Page<ItemDeRanking> ranquear(String labelTemporada, String codigoPosicao,
                                  Integer overallMinimo, Pageable pageable);
@@ -84,28 +99,65 @@ public interface AvaliacaoService {
 Os dois primeiros métodos servem os endpoints REST; o terceiro é chamado pelos testes
 neste ciclo e pelo importador no Plano 3.
 
-### A fronteira que o spec original não previu
+O DTO se chama `AvaliacoesDoJogador`, no plural, porque devolve as nove posições. O
+singular induziria a esperar um número só.
 
-Para materializar aproximadamente dez mil linhas, `avaliacao` precisa varrer os
-atributos de todos os jogadores de uma temporada. Mas `JogadorAtributoRepository` vive em
-`jogador/repository/`, invisível fora do módulo, e entidade JPA não cruza fronteira.
+### A fronteira com `jogador`
 
-A saída é a simétrica da regra que o spec do catálogo já aplica ao importador
+`avaliacao` precisa de quatro coisas que vivem no módulo `jogador`: os atributos para
+calcular, os ids para gravar a chave estrangeira, os nomes para montar o ranking e as
+posições para traduzir código em id. Nada disso pode ser lido por consulta direta —
+`JogadorAtributoRepository` e `PosicaoRepository` vivem em `jogador/repository/`,
+invisíveis fora do módulo, e entidade JPA não cruza fronteira.
+
+A regra aplicada é a simétrica da que o spec do catálogo já impõe ao importador
 ("`dataimport` não escreve em tabela alheia"): **`avaliacao` não lê tabela alheia, lê
-pelo serviço**. `JogadorService` ganha um método de leitura em lote:
+pelo serviço.** Um join JPQL contra `jogador` ou `posicao` está proibido pela mesma
+regra que proíbe o importador de escrever nelas.
+
+Isso custa quatro métodos novos em `JogadorService`. O custo é reconhecido e aceito: é o
+preço da fronteira, e cada método tem função única.
 
 ```java
+// Materialização: varredura paginada dos atributos de uma temporada.
 Page<JogadorComAtributos> listarAtributosPorTemporada(String labelTemporada, Pageable pageable);
+
+// Ranking: resolve uma página inteira de ids de uma vez. Evita o N+1 que
+// chamar buscarPorSlug por item produziria.
+List<JogadorResumo> listarResumosPorIds(Collection<Long> ids, String labelTemporada);
+
+// Traduz codigo <-> id nos dois sentidos: "ATA" na query, e o código de volta
+// na resposta. São nove linhas fixas de catálogo, carregadas de uma vez.
+List<PosicaoCatalogo> listarPosicoes();
+
+// Endpoint por slug: resolve o identificador público para a FK, sem carregar
+// o JogadorDetalhe inteiro.
+Optional<Long> buscarIdPorSlug(String slug);
 ```
 
-`JogadorComAtributos` é um record novo em `jogador/dto/` que envolve o `AtributosJogador`
-já existente, acrescentando identificação. Os dois nomes são próximos e designam coisas
-distintas: `AtributosJogador` são as 18 skills e nada mais; `JogadorComAtributos` é
-`(id, slug, atributos)`.
+Records novos em `jogador/dto/`:
 
-Ele carrega o **id numérico** porque a materialização precisa dele para a chave
-estrangeira de `jogador_overall`. Isso não afrouxa a regra de que o identificador público
-estável é o slug: o id circula entre módulos do backend e nunca aparece em resposta REST.
+- `JogadorComAtributos(Long jogadorId, AtributosJogador atributos)`
+- `PosicaoCatalogo(Long id, String codigo, String nome, String setor)`
+
+`JogadorResumo` **já existe e já expõe `id`** — o ranking o reaproveita sem alteração.
+Isso também é a prova de que o id circulando entre módulos não é exceção aberta por este
+spec: é a prática que o Plano 1 já estabeleceu. O identificador público em resposta REST
+continua sendo o slug.
+
+Uma observação sobre `JogadorResumo.posicao`: ele traz a posição **principal** do
+jogador, que pode divergir da posição **avaliada** no ranking. Um volante ranqueado como
+zagueiro aparece com `posicao = "VOL"` e overall de ZAG. `ItemDeRanking` carrega as duas
+explicitamente para que isso seja legível em vez de confuso.
+
+### Pré-requisito de compilação: `@NamedInterface` em `jogador/dto`
+
+Hoje só `clube/dto` e `temporada/dto` têm `package-info.java` com `@NamedInterface`.
+Sem criar `jogador/dto/package-info.java`, o Modulith trata o subpacote como interno e o
+`ModularidadeTest` reprova `avaliacao` no primeiro build.
+
+Isto não é detalhe de implementação: é a primeira coisa a fazer no módulo `jogador`, e
+sua ausência quebra o build antes de qualquer linha de `avaliacao` ser escrita.
 
 ### Fronteira com o catálogo
 
@@ -117,6 +169,8 @@ O `JogadorController` **não muda**. Se ele passasse a devolver overall, `jogado
 dependeria de `avaliacao` e a dependência declarada se inverteria — rebalancear pesos
 passaria a mexer no contrato do catálogo. O overall é servido por controller próprio do
 módulo `avaliacao`, que já pode ler `jogador`.
+
+Esta decisão fecha o ciclo com um ADR próprio, como o ciclo do catálogo fez com o seu.
 
 ---
 
@@ -138,6 +192,9 @@ create table perfil_avaliacao (
 -- Um único perfil ativo por posição, garantido pelo banco e não por convenção.
 create unique index uq_perfil_avaliacao_ativo
     on perfil_avaliacao (posicao_id) where ativo;
+
+comment on column perfil_avaliacao.vigente_desde is
+    'Informativa: registra quando esta versão entrou em uso. A seleção do perfil é por ativo, nunca por data';
 
 create table perfil_avaliacao_peso (
     perfil_id bigint       not null references perfil_avaliacao (id),
@@ -161,12 +218,13 @@ create table jogador_overall (
     constraint uq_jogador_overall unique (jogador_id, temporada_id, posicao_id)
 );
 
--- Sustenta "melhores atacantes da Série A" sem full scan com aritmética.
+-- Sustenta o ranking sem full scan com aritmética. jogador_id entra no índice
+-- porque o ORDER BY precisa dele como desempate estável.
 create index idx_jogador_overall_ranking
-    on jogador_overall (temporada_id, posicao_id, overall desc);
+    on jogador_overall (temporada_id, posicao_id, overall desc, jogador_id);
 ```
 
-Três decisões que carregam justificativa:
+Quatro decisões que carregam justificativa:
 
 **1. A soma dos pesos igual a 1.0 não vira `check`.** Não é expressável como restrição de
 linha. Fica em `PerfilAvaliacaoIntegridadeTest`, que reprova qualquer perfil ativo cuja
@@ -179,6 +237,11 @@ função.
 
 **3. Skills de goleiro recebem peso 0 nos perfis de linha, com linha explícita.** Todo
 perfil tem exatamente 18 linhas de peso. Sem `NULL`, sem caso especial no calculador.
+
+**4. `vigente_desde` é informativa e não participa de nenhuma regra.** A seleção do perfil
+é por `ativo`. A coluna existe para auditar quando um rebalanceamento entrou em vigor, e
+o comentário no schema diz isso — para que a próxima leitura não a promova a regra
+implícita de vigência temporal.
 
 ### Abrangência da materialização
 
@@ -262,11 +325,27 @@ impossibilitaria comparar o antes e o depois de um rebalanceamento.
 ### O calculador
 
 `CalculadoraDeOverall` é função pura: sem Spring, sem banco, sem repositório. Recebe
-`AtributosJogador` — o record que `jogador` já expõe via `@NamedInterface` — e o perfil de
-pesos; devolve `int`.
+`AtributosJogador` e o perfil de pesos; devolve `int`.
 
-Cruzar a fronteira com um record imutável de 18 inteiros é o propósito da API pública do
-módulo. Um DTO espelho em `avaliacao`, só para traduzir, seria cerimônia sem ganho.
+`AtributosJogador` já existe em `jogador/dto/` e tem **20 componentes**: as 18 skills mais
+`potencialBase` e `fonteAtributo`. As skills são `Integer` (boxed), não primitivos. O
+calculador usa apenas as 18; `potencialBase` pertence ao modelo de progressão e
+`fonteAtributo` à procedência do dado.
+
+Cruzar a fronteira com esse record é o propósito da API pública do módulo. Um DTO espelho
+em `avaliacao`, só para traduzir, seria cerimônia sem ganho.
+
+**Aritmética em `BigDecimal`, arredondamento `HALF_UP`.** Os pesos são `numeric(5,4)` e
+chegam como `BigDecimal`; a soma ponderada permanece em `BigDecimal` e só vira `int` no
+fim, com `setScale(0, RoundingMode.HALF_UP)`. Fazer a conta em `double` introduziria erro
+de representação numa soma de dezoito parcelas — pequeno, mas suficiente para tornar o
+resultado dependente da ordem das parcelas, e para fazer o teste de integridade da soma
+igual a 1.0 falhar por motivo errado. Pelo mesmo motivo, comparações de `BigDecimal` nos
+testes usam `compareTo`, não `equals`.
+
+Um atributo `null` é erro de dado, não caso a tratar: `jogador_atributo` declara as 18
+colunas como `not null`. O calculador falha alto se receber `null`, em vez de assumir
+zero e produzir um overall silenciosamente errado.
 
 `AtributoAvaliavel` carrega a própria extração, em vez de um `switch` de 18 casos:
 
@@ -277,8 +356,11 @@ FORCA(AtributosJogador::forca),
 GOL_MANEJO(AtributosJogador::golManejo);
 ```
 
-Adicionar uma skill vira uma linha, e não existe caminho onde o código compile com o
-atributo declarado no `check` do banco e ausente da conta.
+O ganho é que não existe caminho onde o código compile com um atributo declarado no enum
+e ausente da conta. Adicionar uma skill continua custando quatro coisas — migration
+alterando o `check`, nove linhas de seed por perfil ativo, a constante do enum e o campo
+em `AtributosJogador` —; o que o desenho elimina é o esquecimento silencioso, não o
+trabalho.
 
 O teto de 99 não precisa de `clamp` defensivo: com atributos limitados a 99 e pesos
 somando 1.0, ultrapassá-lo é matematicamente impossível. Isso vira teste, não `if`.
@@ -295,9 +377,14 @@ Percorre os jogadores em páginas, com **transação por lote e não uma transa�
 dez mil linhas**, e faz upsert por `(jogador_id, temporada_id, posicao_id)`. Rodar duas
 vezes sobre o mesmo estado produz resultado idêntico.
 
+**A varredura é ordenada por `jogador.id` ascendente.** Sem ordenação total e estável, a
+paginação entre commits de lote pode pular ou repetir uma página — e o resultado passaria
+a depender do plano de execução do Postgres. O upsert torna a repetição inofensiva, mas
+não a omissão.
+
 **Não é exposta por REST.** Se virasse endpoint, seria um `POST` no catálogo e derrubaria
-a verificação do ADR. Neste ciclo quem a chama são os testes; no Plano 3, o importador, como
-último passo da ordem de carga.
+a verificação do ADR. Neste ciclo quem a chama são os testes; no Plano 3, o importador,
+como último passo da ordem de carga.
 
 ---
 
@@ -314,13 +401,25 @@ O primeiro devolve o overall nas nove posições, ordenado do maior para o menor
 versão de perfil usada. O segundo devolve uma página de jogadores ordenada por overall
 decrescente na posição pedida.
 
+**O ranking é global por temporada, sem filtro de competição.** Responder "os melhores
+atacantes da Série A" exigiria atravessar `competicao` (para saber quem disputou a
+edição) e `jogador` (para saber em que clube o jogador estava), o que multiplica a
+fronteira deste ciclo por dois. Fica de fora; o índice comporta o filtro quando ele for
+necessário.
+
+**A ordenação é `overall desc, jogador_id asc`.** Só por overall, dezenas de empates
+tornariam a paginação não determinística — o mesmo jogador poderia aparecer em duas
+páginas ou em nenhuma. O desempate é arbitrário de propósito; o que importa é ser total e
+estável.
+
 O ranking fica em `/api/v1/rankings`, **não** em `/api/v1/jogadores/ranking`. O segundo
 colidiria com o `/api/v1/jogadores/{slug}` existente: funcionaria por acidente — o Spring
 prioriza o literal sobre a variável de template — até alguém cadastrar um jogador com
 slug `ranking`. Recurso próprio evita depender dessa precedência.
 
-Ambas as rotas exigem entrada nova em `SecurityConfig`, que declara rotas públicas uma a
-uma.
+**Só `/api/v1/rankings` exige entrada nova em `SecurityConfig`.** O
+`GET /api/v1/jogadores/**` já é `permitAll`, e o sub-recurso `/overall` está coberto por
+ele.
 
 ---
 
@@ -328,11 +427,12 @@ uma.
 
 | Teste | Prova | Tipo |
 |---|---|---|
-| `CalculadoraDeOverallTest` | soma ponderada contra caso calculado à mão; o mesmo zagueiro pontua diferente como lateral; tudo 99 resulta em 99 e tudo 0 resulta em 0; arredondamento nas bordas | puro, sem Spring |
-| `PerfilAvaliacaoIntegridadeTest` | todo perfil ativo soma exatamente 1.0000; exatamente um ativo por posição; todo perfil tem 18 linhas de peso | Testcontainers, contra o seed |
+| `CalculadoraDeOverallTest` | soma ponderada contra caso calculado à mão; o mesmo zagueiro pontua diferente como lateral; tudo 99 resulta em 99 e tudo 0 resulta em 0; `HALF_UP` nas bordas (`.5` sobe); atributo nulo falha alto | puro, sem Spring |
+| `PerfilAvaliacaoIntegridadeTest` | todo perfil ativo soma exatamente 1.0000 por `compareTo`; exatamente um ativo por posição; todo perfil tem 18 linhas de peso | Testcontainers, contra o seed |
 | `MaterializacaoOverallTest` | nove linhas por jogador e temporada; `perfil_versao` gravada; segunda execução não duplica e não altera nenhum overall | Testcontainers |
+| `RankingPaginacaoTest` | com jogadores empatados no mesmo overall, duas páginas consecutivas não repetem nem omitem ninguém | Testcontainers |
 | `AvaliacaoControllerTest` | contrato dos dois endpoints e 404 para slug inexistente | `@WebMvcTest` com `SecurityConfig` real e `@MockitoBean` |
-| `ModularidadeTest` (existente) | `avaliacao` depende de `jogador`; nada depende de `avaliacao` | Spring Modulith |
+| `ModularidadeTest` (existente) | `avaliacao` depende de `jogador` e `temporada`; nada depende de `avaliacao` | Spring Modulith |
 
 Persistência é testada com Testcontainers, conforme `.rules/java-testing.md`. Sem H2, sem
 mock de repository.
@@ -358,6 +458,12 @@ simulação (subsistema 2) é o que vai gerar evidência para ajustá-los.
 lotes paginados existe por isso, mas o número real só aparece com dado real. Se o
 importador ficar lento, o ponto de ataque é o tamanho do lote, não o modelo.
 
+**4. A fronteira custa quatro métodos em `JogadorService`.** Cada um se justifica
+isoladamente, mas o conjunto sinaliza que `posicao` — catálogo fixo de nove linhas,
+consultado por dois módulos — pode acabar merecendo módulo próprio. Não neste ciclo: um
+módulo para nove linhas imutáveis seria cerimônia. Se um terceiro módulo precisar de
+`posicao`, a conta muda.
+
 ## Fora de escopo
 
 Progressão, arquétipos de crescimento, envelhecimento por skill, estágios de carreira,
@@ -365,4 +471,4 @@ projeção, declínio reversível, lesões, pools de nomes e geração de jogado
 todos com spec próprio. Pipeline de dados e importador — Plano 3. Camada de save,
 motor de simulação e frontend — subsistemas seguintes.
 
-Nenhum dado real entra no banco neste ciclo.
+Filtro de ranking por competição. Nenhum dado real no banco.
