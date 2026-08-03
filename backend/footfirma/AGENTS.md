@@ -61,14 +61,14 @@ src/main/java/br/com/api/footfirma/
 
 src/main/resources/
 ├── application.properties
-└── db/migration/ # Flyway: V{n}__descricao.sql (V1…V13 aplicadas)
+└── db/migration/ # Flyway: V{n}__descricao.sql (V1…V14 aplicadas)
 ```
 
 Status: verificado em 2026-08-03.
 
-Seis módulos de domínio existem: `temporada`, `geografia`, `clube`, `jogador`,
-`competicao` e `avaliacao`. **Ao criar o próximo, copie o formato de um deles** — a
-estrutura já está estabelecida, e partir do zero só produz divergência.
+Sete módulos de domínio existem: `temporada`, `geografia`, `clube`, `jogador`,
+`competicao`, `avaliacao` e `importacao`. **Ao criar o próximo, copie o formato de um
+deles** — a estrutura já está estabelecida, e partir do zero só produz divergência.
 
 Dois pontos que a leitura do código não entrega de imediato:
 
@@ -82,15 +82,29 @@ Dois pontos que a leitura do código não entrega de imediato:
 
 A API é read-only por decisão registrada em
 `docs/adr/2026-08-01-catalogo-read-only.md`: nenhum controller aceita `POST`, `PUT`,
-`PATCH` ou `DELETE`. A única escrita virá do importador. O banco tem o schema completo
-e os seeds de catálogo, e está **vazio de clubes e jogadores** — os endpoints respondem
-lista vazia e 404 em banco real até o importador rodar.
+`PATCH` ou `DELETE`. A única escrita vem do módulo `importacao`, que não é endpoint —
+é um `ApplicationRunner` sob o profile `importacao`.
+
+Em banco zerado o catálogo continua **vazio de clubes e jogadores**, e os endpoints
+respondem lista vazia e 404. Rodar a carga de `fixtures/v1` popula 8 clubes fictícios
+e 176 jogadores. Ver `docs/runbooks/importacao.md` e `fixtures/README.md`.
+
+Duas coisas que a leitura de `importacao` não entrega de imediato:
+
+- **Ele orquestra e não escreve em tabela alheia.** Cada módulo de catálogo expõe
+  métodos `sincronizar*`; o importador só os chama. Registrado em
+  `docs/adr/2026-08-03-ingestao-pelos-modulos.md`.
+- **Ocorrência é linha recusada antes do banco; erro de banco aborta a etapa.**
+  Capturar violação de constraint para "continuar" produziria transação
+  *rollback-only* que reporta sucesso e grava nada.
 
 ## O que nunca fazer neste repositório
 
 - Criar pacotes técnicos globais (`controllers/`, `services/`, `entities/`) — a
   organização é **package by feature** e o Spring Modulith valida isso
 - Referenciar tipo de subpacote interno de outro módulo
+- Escrever em tabela de outro módulo a partir de `importacao` — a ingestão passa pela
+  interface pública do módulo dono, sempre
 - Expor `@Entity` em controller, DTO ou payload de evento
 - Editar migration já aplicada
 - Deixar o schema ser gerado por `ddl-auto` em vez de Flyway

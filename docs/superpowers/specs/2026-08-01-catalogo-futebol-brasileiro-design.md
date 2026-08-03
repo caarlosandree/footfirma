@@ -410,6 +410,14 @@ safra. Isso o torna testável na v1, antes de existir save onde persistir.
 
 ## Pipeline de dados
 
+> **Status de execução (2026-08-03).** Desta seção, apenas o **estágio 4 (formato de
+> emissão)** e o **importador** foram implementados, sobre fixtures fictícias — ver
+> `docs/superpowers/plans/2026-08-03-importador-fixtures.md`. Os estágios 1–3
+> (extract, match, transform), o diretório `data-pipeline/`, `attribute_mapping.yaml`,
+> `club_aliases.yaml` e `overrides.yaml` **não existem**: sem fonte externa não há o
+> que extrair nem casar. O formato de dataset descrito aqui é o contrato que um
+> pipeline futuro precisará cumprir para que o importador não mude.
+
 `data-pipeline/` na raiz do monorepo, em Python. Quatro estágios com artefato em disco
 entre cada um — cada estágio roda, é inspecionado e re-executado isoladamente.
 

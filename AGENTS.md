@@ -189,24 +189,27 @@ Status: verificado em 2026-08-03.
 
 **Os dois lados estão em estágios muito diferentes.**
 
-O **backend** saiu do scaffold. Tem seis módulos de domínio (`temporada`, `geografia`,
-`clube`, `jogador`, `competicao`, `avaliacao`), mais `config` e `shared` como módulos
-abertos, treze migrations Flyway e uma suíte de 74 testes. A API é read-only em
-`/api/v1/clubes`, `/jogadores`, `/competicoes`, `/jogadores/{slug}/overall` e
-`/rankings`. Aqui já existem exemplos prontos: ao criar um módulo novo, copie o
-formato de um existente em vez de partir do zero.
+O **backend** saiu do scaffold. Tem sete módulos de domínio (`temporada`, `geografia`,
+`clube`, `jogador`, `competicao`, `avaliacao`, `importacao`), mais `config` e `shared`
+como módulos abertos, catorze migrations Flyway e uma suíte de 157 testes. A API é
+read-only em `/api/v1/clubes`, `/jogadores`, `/competicoes`,
+`/jogadores/{slug}/overall` e `/rankings`. Aqui já existem exemplos prontos: ao criar
+um módulo novo, copie o formato de um existente em vez de partir do zero.
 
 O banco tem o schema completo e os seeds de país, estado, posição, característica e
-perfis de peso — e está **vazio de clubes e jogadores** até o importador do Plano 3
-rodar. Consequência prática: os endpoints respondem lista vazia e 404 em banco real, e
-isso é esperado, não defeito.
+perfis de peso. Em base zerada continua **vazio de clubes e jogadores** — os endpoints
+respondem lista vazia e 404, e isso é esperado. Rodar a carga de
+`backend/footfirma/fixtures/v1` popula 8 clubes fictícios, 176 jogadores e 3.168
+linhas de overall. Ver `backend/footfirma/docs/runbooks/importacao.md`.
 
 O **frontend** continua em scaffold: layout raiz, página inicial, `theme-provider` e o
 `Button` do design system. Ali as regras ainda guiam a construção em vez de descrever
 o que existe.
 
 Roadmap do backend, para situar uma tarefa nova: o subsistema de catálogo foi fatiado
-em três planos — Plano 1 (schema e API read-only) e Plano 2 (avaliação e overall) estão
-executados; o Plano 3 (pipeline de dados em Python e importador) é o próximo, e a
-progressão de jogadores tem spec próprio ainda não escrito. Ver
-`docs/superpowers/specs/` e `docs/superpowers/plans/`.
+em três planos. Plano 1 (schema e API read-only) e Plano 2 (avaliação e overall) estão
+executados. O Plano 3 está **parcialmente** executado: o formato do dataset, as
+fixtures fictícias e o importador Java foram entregues; o pipeline de dados em Python
+— extração de fonte externa e matching entre fontes — **não**, e é o próximo passo se
+o projeto quiser dados reais. A progressão de jogadores tem spec próprio ainda não
+escrito. Ver `docs/superpowers/specs/` e `docs/superpowers/plans/`.
