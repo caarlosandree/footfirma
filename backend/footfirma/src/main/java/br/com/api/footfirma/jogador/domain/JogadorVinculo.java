@@ -41,6 +41,10 @@ public class JogadorVinculo {
     @Column(nullable = false)
     private TipoVinculo tipo;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CategoriaDeElenco categoria;
+
     @Column(name = "numero_camisa")
     private Integer numeroCamisa;
 
@@ -61,6 +65,7 @@ public class JogadorVinculo {
         this.clubeId = clubeId;
         this.temporadaId = temporadaId;
         this.tipo = tipo;
+        this.categoria = CategoriaDeElenco.PROFISSIONAL;
     }
 
     @Override

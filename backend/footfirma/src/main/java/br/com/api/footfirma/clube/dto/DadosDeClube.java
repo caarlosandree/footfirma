@@ -7,5 +7,6 @@ package br.com.api.footfirma.clube.dto;
 public record DadosDeClube(String slug, String nomeOficial, String nomeCurto, String apelido,
                            Integer anoFundacao, Long paisId, Long estadoId, Long estadioId,
                            String corPrimaria, String corSecundaria,
-                           Integer reputacao, Integer qualidadeBase, Long estadoBaseId) {
+                           Integer reputacao, Integer forcaFinanceira, Integer qualidadeBase,
+                           Long estadoBaseId) {
 }

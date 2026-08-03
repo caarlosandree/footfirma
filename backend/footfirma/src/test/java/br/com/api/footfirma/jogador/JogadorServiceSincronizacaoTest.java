@@ -213,9 +213,23 @@ class JogadorServiceSincronizacaoTest {
                 85, 5, "IMPORTADO", OffsetDateTime.parse("2026-01-15T10:00:00Z"));
     }
 
+    @Test
+    void deveGravarVinculoDeBase() {
+        var jogadorId = jogadorService.sincronizarJogador(jogador("sinc-base", "sinc base")).id();
+        var dados = new DadosDeVinculo(jogadorId, clubeA, temporadaA, "CONTRATO", "BASE",
+                null, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31), null);
+
+        var resultado = jogadorService.sincronizarVinculo(dados);
+
+        var categoria = jdbcTemplate.queryForObject(
+                "select categoria from jogador_vinculo where id = ?", String.class, resultado.id());
+        assertThat(categoria).isEqualTo("BASE");
+    }
+
     private DadosDeVinculo vinculo(Long jogadorId, Long clubeId, Long temporadaId, int camisa) {
-        return new DadosDeVinculo(jogadorId, clubeId, temporadaId, "CONTRATO", camisa,
-                LocalDate.of(2025, 1, 1), LocalDate.of(2026, 12, 31), new BigDecimal("1500000.00"));
+        return new DadosDeVinculo(jogadorId, clubeId, temporadaId, "CONTRATO", "PROFISSIONAL",
+                camisa, LocalDate.of(2025, 1, 1), LocalDate.of(2026, 12, 31),
+                new BigDecimal("1500000.00"));
     }
 
     private Long inserirTemporada(String label) {
