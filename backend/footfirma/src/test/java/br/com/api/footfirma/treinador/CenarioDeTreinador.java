@@ -5,6 +5,7 @@ import br.com.api.footfirma.treinador.domain.StatusConfianca;
 import br.com.api.footfirma.treinador.domain.Treinador;
 import br.com.api.footfirma.treinador.domain.TreinadorJogador;
 import br.com.api.footfirma.treinador.domain.VinculoTreinador;
+import br.com.api.footfirma.treinador.repository.AfinidadeRepository;
 import br.com.api.footfirma.treinador.repository.EventoProcessadoRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorJogadorRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorRepository;
@@ -44,6 +45,9 @@ public abstract class CenarioDeTreinador {
 
     @Autowired
     protected TreinadorSkillRepository skills;
+
+    @Autowired
+    protected AfinidadeRepository afinidades;
 
     @Autowired
     protected EventoProcessadoRepository processados;

@@ -79,6 +79,19 @@ final class ConstantesDeTreinador {
 
     static final int SKILL_MAXIMA = 10;
 
+    // --- Afinidade ---
+
+    /** Uma temporada e meia. Passagem desse tamanho já domina a memória anterior. */
+    static final double AFINIDADE_JOGOS_DE_REFERENCIA = 60.0;
+
+    static final double AFINIDADE_PESO_MIN = 0.10;
+
+    /**
+     * O teto impede que uma passagem longa apague o histórico: quem trabalhou bem com
+     * você por seis anos não vira estranho por causa de um último ano ruim.
+     */
+    static final double AFINIDADE_PESO_MAX = 0.70;
+
     /** Especialista gasta {@code 10·5·2·1·1·1}; generalista, {@code 4·4·3·3·3·3}. */
     static final int PONTOS_INICIAIS = 20;
 
