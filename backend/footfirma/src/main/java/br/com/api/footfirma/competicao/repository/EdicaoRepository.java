@@ -20,4 +20,8 @@ public interface EdicaoRepository extends JpaRepository<Edicao, Long> {
             """)
     Optional<Edicao> buscarPorSlugETemporadaId(@Param("slug") String slug,
                                                @Param("temporadaId") Long temporadaId);
+
+    // Sem join fetch, ao contrário do método acima: aqui o alvo é upsert, não montar
+    // DTO de leitura.
+    Optional<Edicao> findByCompeticaoIdAndTemporadaId(Long competicaoId, Long temporadaId);
 }
