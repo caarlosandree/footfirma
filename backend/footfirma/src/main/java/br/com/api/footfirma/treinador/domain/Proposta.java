@@ -46,6 +46,10 @@ public class Proposta {
     @Column(name = "meta_posicao", nullable = false)
     private Integer metaPosicao;
 
+    /** Congelada na abertura da vaga — ver o comentário da coluna na migration V19. */
+    @Column(name = "reputacao_clube", nullable = false)
+    private Integer reputacaoClube;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusProposta status;
@@ -63,13 +67,18 @@ public class Proposta {
     }
 
     public Proposta(Long clubeId, Treinador treinador, Long temporadaId,
-                    int metaPosicao, OffsetDateTime expiraEm) {
+                    int metaPosicao, int reputacaoClube, OffsetDateTime expiraEm) {
         this.clubeId = clubeId;
         this.treinador = treinador;
         this.temporadaId = temporadaId;
         this.metaPosicao = metaPosicao;
+        this.reputacaoClube = reputacaoClube;
         this.expiraEm = expiraEm;
         this.status = StatusProposta.ABERTA;
+    }
+
+    public boolean estaAberta() {
+        return status == StatusProposta.ABERTA;
     }
 
     public void responder(StatusProposta desfecho, OffsetDateTime quando) {

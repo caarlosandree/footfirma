@@ -79,6 +79,15 @@ final class ConstantesDeTreinador {
 
     static final int SKILL_MAXIMA = 10;
 
+    // --- Mercado ---
+
+    /** Quem se afasta demais da reputação do clube nem entra na lista de candidatos. */
+    static final int FAIXA_DE_COMPATIBILIDADE = 25;
+
+    static final int ASSEDIO_DIFERENCA_MINIMA = 10;
+    static final double ASSEDIO_MORAL_MINIMA = 60.0;
+    static final int ASSEDIO_MARGEM_DE_REPUTACAO = 20;
+
     // --- Afinidade ---
 
     /** Uma temporada e meia. Passagem desse tamanho já domina a memória anterior. */

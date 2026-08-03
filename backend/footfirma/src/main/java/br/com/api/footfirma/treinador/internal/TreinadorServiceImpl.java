@@ -4,19 +4,25 @@ import br.com.api.footfirma.shared.exception.DistribuicaoInvalidaException;
 import br.com.api.footfirma.shared.exception.RecursoNaoEncontradoException;
 import br.com.api.footfirma.treinador.TreinadorService;
 import br.com.api.footfirma.treinador.domain.Skill;
+import br.com.api.footfirma.treinador.domain.StatusProposta;
 import br.com.api.footfirma.treinador.domain.Treinador;
 import br.com.api.footfirma.treinador.domain.TreinadorSkill;
 import br.com.api.footfirma.treinador.dto.DistribuicaoDeSkills;
 import br.com.api.footfirma.treinador.dto.NovoTreinador;
+import br.com.api.footfirma.treinador.dto.PropostaResumo;
 import br.com.api.footfirma.treinador.dto.TreinadorDetalhe;
 import br.com.api.footfirma.treinador.dto.TreinadorResumo;
+import br.com.api.footfirma.treinador.dto.VinculoResumo;
 import br.com.api.footfirma.treinador.mapper.TreinadorMapper;
+import br.com.api.footfirma.treinador.repository.PropostaRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorSkillRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +39,8 @@ class TreinadorServiceImpl implements TreinadorService {
 
     private final TreinadorRepository treinadores;
     private final TreinadorSkillRepository skills;
+    private final PropostaRepository propostas;
+    private final ContratacaoDeTreinador contratacao;
     private final TreinadorMapper treinadorMapper;
 
     @Override
@@ -73,6 +81,27 @@ class TreinadorServiceImpl implements TreinadorService {
         treinador.setPontosDisponiveis(0);
 
         return treinadorMapper.paraDetalhe(treinador, mapear(atuais));
+    }
+
+    @Override
+    public List<PropostaResumo> listarPropostasAbertas(long treinadorId) {
+        return propostas.findByTreinadorIdAndStatusAndExpiraEmAfterOrderByCriadaEmDesc(
+                        treinadorId, StatusProposta.ABERTA, OffsetDateTime.now(ZoneOffset.UTC))
+                .stream()
+                .map(treinadorMapper::paraResumo)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public VinculoResumo aceitarProposta(long propostaId) {
+        return treinadorMapper.paraResumo(contratacao.aceitar(propostaId));
+    }
+
+    @Override
+    @Transactional
+    public PropostaResumo recusarProposta(long propostaId) {
+        return treinadorMapper.paraResumo(contratacao.recusar(propostaId));
     }
 
     /**

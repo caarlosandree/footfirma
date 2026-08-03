@@ -2,9 +2,12 @@ package br.com.api.footfirma.treinador;
 
 import br.com.api.footfirma.treinador.dto.DistribuicaoDeSkills;
 import br.com.api.footfirma.treinador.dto.NovoTreinador;
+import br.com.api.footfirma.treinador.dto.PropostaResumo;
 import br.com.api.footfirma.treinador.dto.TreinadorDetalhe;
 import br.com.api.footfirma.treinador.dto.TreinadorResumo;
+import br.com.api.footfirma.treinador.dto.VinculoResumo;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -35,4 +38,15 @@ public interface TreinadorService {
      */
     TreinadorDetalhe distribuirPontos(long treinadorId, long temporadaId,
                                       DistribuicaoDeSkills ganhos);
+
+    /** A caixa de entrada do treinador: o que ainda está em jogo, do mais recente ao mais antigo. */
+    List<PropostaResumo> listarPropostasAbertas(long treinadorId);
+
+    /**
+     * Encerra o vínculo atual, se houver, e abre o novo com a moral semeada pela reputação
+     * congelada na proposta.
+     */
+    VinculoResumo aceitarProposta(long propostaId);
+
+    PropostaResumo recusarProposta(long propostaId);
 }

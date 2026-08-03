@@ -7,6 +7,7 @@ import br.com.api.footfirma.treinador.domain.TreinadorJogador;
 import br.com.api.footfirma.treinador.domain.VinculoTreinador;
 import br.com.api.footfirma.treinador.repository.AfinidadeRepository;
 import br.com.api.footfirma.treinador.repository.EventoProcessadoRepository;
+import br.com.api.footfirma.treinador.repository.PropostaRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorJogadorRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorSkillRepository;
@@ -51,6 +52,9 @@ public abstract class CenarioDeTreinador {
 
     @Autowired
     protected EventoProcessadoRepository processados;
+
+    @Autowired
+    protected PropostaRepository propostas;
 
     @Autowired
     protected JdbcTemplate jdbcTemplate;
