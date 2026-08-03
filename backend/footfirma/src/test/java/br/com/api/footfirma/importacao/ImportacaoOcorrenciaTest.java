@@ -65,7 +65,7 @@ class ImportacaoOcorrenciaTest {
 
         var vinculos = jdbcTemplate.queryForObject(
                 "select count(*) from jogador_vinculo", Integer.class);
-        assertThat(vinculos).isEqualTo(352);
+        assertThat(vinculos).isEqualTo(880);
     }
 
     @Test
@@ -78,7 +78,7 @@ class ImportacaoOcorrenciaTest {
                 .filter(candidata -> candidata.entidade().equals("jogador_vinculo"))
                 .findFirst()
                 .orElseThrow();
-        assertThat(contagem.lidos()).isEqualTo(353);
+        assertThat(contagem.lidos()).isEqualTo(881);
         assertThat(contagem.recusados()).isEqualTo(1);
     }
 
@@ -91,7 +91,7 @@ class ImportacaoOcorrenciaTest {
         var linha = jdbcTemplate.queryForObject(
                 "select linha from importacao_ocorrencia where execucao_id = ?", Integer.class,
                 relatorio.execucaoId());
-        assertThat(linha).isEqualTo(354);
+        assertThat(linha).isEqualTo(882);
     }
 
     @Test

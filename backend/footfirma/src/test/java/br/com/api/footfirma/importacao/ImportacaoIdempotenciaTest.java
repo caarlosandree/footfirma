@@ -40,13 +40,25 @@ class ImportacaoIdempotenciaTest {
     }
 
     @Test
-    void deveCarregarOitoClubesECentoESetentaESeisJogadores() {
+    void deveCarregarVinteClubesEQuatrocentosEQuarentaJogadores() {
         importacaoService.importar(FIXTURES);
 
-        assertThat(contar("clube")).isEqualTo(8);
-        assertThat(contar("jogador")).isEqualTo(176);
-        assertThat(contar("jogador_atributo")).isEqualTo(352);
-        assertThat(contar("jogador_vinculo")).isEqualTo(352);
+        assertThat(contar("clube")).isEqualTo(20);
+        assertThat(contar("jogador")).isEqualTo(440);
+        assertThat(contar("jogador_atributo")).isEqualTo(880);
+        assertThat(contar("jogador_vinculo")).isEqualTo(880);
+    }
+
+    @Test
+    void deveReaproveitarOEstadioCompartilhadoEntreDoisClubes() {
+        importacaoService.importar(FIXTURES);
+
+        assertThat(contar("estadio")).isEqualTo(18);
+        var clubesNoMaracana = jdbcTemplate.queryForObject("""
+                select count(*) from clube c join estadio e on e.id = c.estadio_id
+                where e.nome = 'Maracanã'
+                """, Integer.class);
+        assertThat(clubesNoMaracana).isEqualTo(2);
     }
 
     @Test
@@ -78,7 +90,7 @@ class ImportacaoIdempotenciaTest {
     void deveMaterializarOverallNasNovePosicoesParaAsDuasTemporadas() {
         importacaoService.importar(FIXTURES);
 
-        assertThat(contar("jogador_overall")).isEqualTo(176 * 9 * 2);
+        assertThat(contar("jogador_overall")).isEqualTo(440 * 9 * 2);
         var zerados = jdbcTemplate.queryForObject(
                 "select count(*) from jogador_overall where overall = 0", Integer.class);
         assertThat(zerados).isZero();

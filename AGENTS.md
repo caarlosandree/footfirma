@@ -199,8 +199,10 @@ um módulo novo, copie o formato de um existente em vez de partir do zero.
 O banco tem o schema completo e os seeds de país, estado, posição, característica e
 perfis de peso. Em base zerada continua **vazio de clubes e jogadores** — os endpoints
 respondem lista vazia e 404, e isso é esperado. Rodar a carga de
-`backend/footfirma/fixtures/v1` popula 8 clubes fictícios, 176 jogadores e 3.168
-linhas de overall. Ver `backend/footfirma/docs/runbooks/importacao.md`.
+`backend/footfirma/fixtures/v1` popula 20 clubes **reais** da Série A, 440 jogadores
+**fictícios** e 7.920 linhas de overall. Clube e competição são dados públicos;
+jogador é gerado proceduralmente, porque atribuir habilidade a pessoa real exigiria
+fonte licenciada. Ver `backend/footfirma/docs/runbooks/importacao.md`.
 
 O **frontend** continua em scaffold: layout raiz, página inicial, `theme-provider` e o
 `Button` do design system. Ali as regras ainda guiam a construção em vez de descrever

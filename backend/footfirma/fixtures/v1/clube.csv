@@ -1,9 +1,21 @@
 slug,nome_oficial,nome_curto,apelido,ano_fundacao,iso_pais,uf,estadio_chave,cor_primaria,cor_secundaria,reputacao,qualidade_base,uf_base
-atletico-serrano,Atlético Clube Serrano,Serrano,,1903,BRA,MG,atletico-serrano,#1B4D3E,#FFFFFF,78,72,MG
-guarani-portuario,Guarani Portuário Futebol Clube,Portuário,,1924,BRA,SP,guarani-portuario,#0A2D6E,#F2C230,74,68,SP
-sociedade-ipanema,Sociedade Esportiva Ipanema,Ipanema,,1921,BRA,RJ,sociedade-ipanema,#7B1E3A,#FFFFFF,71,65,RJ
-esporte-clube-varzea,Esporte Clube Várzea,Várzea,,1918,BRA,RS,esporte-clube-varzea,#0F5132,#111111,68,70,RS
-nacional-do-cerrado,Nacional do Cerrado,Cerrado,,1914,BRA,GO,nacional-do-cerrado,#B33A00,#FFFFFF,64,58,GO
-uniao-litoranea,União Litorânea Futebol Clube,Litorânea,,1911,BRA,SC,uniao-litoranea,#00557F,#9FD8EF,61,62,SC
-real-sertanejo,Real Sertanejo Esporte Clube,Sertanejo,,1907,BRA,BA,real-sertanejo,#4B2E83,#F5F5F5,57,55,BA
-avante-fluvial,Avante Fluvial Clube,Fluvial,,1902,BRA,PA,avante-fluvial,#006B54,#EAEAEA,52,50,PA
+flamengo,Clube de Regatas do Flamengo,Flamengo,,1895,BRA,RJ,maracana,#E30613,#000000,88,84,RJ
+palmeiras,Sociedade Esportiva Palmeiras,Palmeiras,,1914,BRA,SP,allianz-parque,#006437,#FFFFFF,87,86,SP
+corinthians,Sport Club Corinthians Paulista,Corinthians,,1910,BRA,SP,neo-quimica-arena,#000000,#FFFFFF,84,78,SP
+sao-paulo,São Paulo Futebol Clube,São Paulo,,1930,BRA,SP,morumbi,#FE0000,#000000,83,80,SP
+atletico-mineiro,Clube Atlético Mineiro,Atlético-MG,,1908,BRA,MG,arena-mrv,#000000,#FFFFFF,82,79,MG
+fluminense,Fluminense Football Club,Fluminense,,1902,BRA,RJ,maracana,#9F022F,#005F35,80,82,RJ
+internacional,Sport Club Internacional,Internacional,,1909,BRA,RS,beira-rio,#E5050F,#FFFFFF,79,77,RS
+gremio,Grêmio Foot-Ball Porto Alegrense,Grêmio,,1903,BRA,RS,arena-do-gremio,#0D80BF,#000000,79,78,RS
+botafogo,Botafogo de Futebol e Regatas,Botafogo,,1904,BRA,RJ,nilton-santos,#000000,#FFFFFF,77,74,RJ
+cruzeiro,Cruzeiro Esporte Clube,Cruzeiro,,1921,BRA,MG,mineirao,#003DA5,#FFFFFF,76,75,MG
+vasco-da-gama,Club de Regatas Vasco da Gama,Vasco,,1898,BRA,RJ,sao-januario,#000000,#FFFFFF,74,76,RJ
+santos,Santos Futebol Clube,Santos,,1912,BRA,SP,vila-belmiro,#FFFFFF,#000000,73,85,SP
+athletico-paranaense,Club Athletico Paranaense,Athletico-PR,,1924,BRA,PR,ligga-arena,#E30613,#000000,71,80,PR
+bahia,Esporte Clube Bahia,Bahia,,1931,BRA,BA,arena-fonte-nova,#005CA9,#E30613,70,72,BA
+fortaleza,Fortaleza Esporte Clube,Fortaleza,,1918,BRA,CE,arena-castelao,#005CA9,#E30613,68,64,CE
+sport,Sport Club do Recife,Sport,,1905,BRA,PE,ilha-do-retiro,#E30613,#000000,65,68,PE
+vitoria,Esporte Clube Vitória,Vitória,,1899,BRA,BA,barradao,#E30613,#000000,63,74,BA
+coritiba,Coritiba Foot Ball Club,Coritiba,,1909,BRA,PR,couto-pereira,#005C3C,#FFFFFF,62,70,PR
+ceara,Ceará Sporting Club,Ceará,,1914,BRA,CE,arena-castelao,#000000,#FFFFFF,60,62,CE
+goias,Goiás Esporte Clube,Goiás,,1943,BRA,GO,serrinha,#009B3A,#FFFFFF,58,66,GO

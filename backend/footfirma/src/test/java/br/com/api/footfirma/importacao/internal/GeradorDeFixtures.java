@@ -68,23 +68,89 @@ public final class GeradorDeFixtures {
                                  String corPrimaria, String corSecundaria) {
     }
 
+    /**
+     * Vinte clubes de maior expressão nacional. **Não é a tabela de uma temporada
+     * específica** — acesso e rebaixamento mudam a composição da Série A todo ano, e
+     * fixar uma temporada aqui exigiria uma fonte que este gerador não tem.
+     *
+     * <p>Nome, cidade, estádio, fundação e cores são reais; reputação e qualidade de
+     * base são estimativas de expressão nacional, não medidas.
+     */
     private static final List<ClubeFicticio> CLUBES = List.of(
-            new ClubeFicticio("atletico-serrano", "Serrano", "Atlético Clube Serrano", "MG",
-                    "Juiz de Fora", "Arena da Serra", 78, 72, "#1B4D3E", "#FFFFFF"),
-            new ClubeFicticio("guarani-portuario", "Portuário", "Guarani Portuário Futebol Clube", "SP",
-                    "Santos", "Estádio das Docas", 74, 68, "#0A2D6E", "#F2C230"),
-            new ClubeFicticio("sociedade-ipanema", "Ipanema", "Sociedade Esportiva Ipanema", "RJ",
-                    "Niterói", "Estádio Beira-Mar", 71, 65, "#7B1E3A", "#FFFFFF"),
-            new ClubeFicticio("esporte-clube-varzea", "Várzea", "Esporte Clube Várzea", "RS",
-                    "Pelotas", "Estádio Campo Novo", 68, 70, "#0F5132", "#111111"),
-            new ClubeFicticio("nacional-do-cerrado", "Cerrado", "Nacional do Cerrado", "GO",
-                    "Anápolis", "Arena do Planalto", 64, 58, "#B33A00", "#FFFFFF"),
-            new ClubeFicticio("uniao-litoranea", "Litorânea", "União Litorânea Futebol Clube", "SC",
-                    "Itajaí", "Estádio Marítimo", 61, 62, "#00557F", "#9FD8EF"),
-            new ClubeFicticio("real-sertanejo", "Sertanejo", "Real Sertanejo Esporte Clube", "BA",
-                    "Feira de Santana", "Arena do Sertão", 57, 55, "#4B2E83", "#F5F5F5"),
-            new ClubeFicticio("avante-fluvial", "Fluvial", "Avante Fluvial Clube", "PA",
-                    "Santarém", "Estádio Rio Grande", 52, 50, "#006B54", "#EAEAEA"));
+            new ClubeFicticio("flamengo", "Flamengo", "Clube de Regatas do Flamengo", "RJ",
+                    "Rio de Janeiro", "Maracanã", 88, 84, "#E30613", "#000000"),
+            new ClubeFicticio("palmeiras", "Palmeiras", "Sociedade Esportiva Palmeiras", "SP",
+                    "São Paulo", "Allianz Parque", 87, 86, "#006437", "#FFFFFF"),
+            new ClubeFicticio("corinthians", "Corinthians", "Sport Club Corinthians Paulista", "SP",
+                    "São Paulo", "Neo Química Arena", 84, 78, "#000000", "#FFFFFF"),
+            new ClubeFicticio("sao-paulo", "São Paulo", "São Paulo Futebol Clube", "SP",
+                    "São Paulo", "Morumbi", 83, 80, "#FE0000", "#000000"),
+            new ClubeFicticio("atletico-mineiro", "Atlético-MG", "Clube Atlético Mineiro", "MG",
+                    "Belo Horizonte", "Arena MRV", 82, 79, "#000000", "#FFFFFF"),
+            new ClubeFicticio("fluminense", "Fluminense", "Fluminense Football Club", "RJ",
+                    "Rio de Janeiro", "Maracanã", 80, 82, "#9F022F", "#005F35"),
+            new ClubeFicticio("internacional", "Internacional", "Sport Club Internacional", "RS",
+                    "Porto Alegre", "Beira-Rio", 79, 77, "#E5050F", "#FFFFFF"),
+            new ClubeFicticio("gremio", "Grêmio", "Grêmio Foot-Ball Porto Alegrense", "RS",
+                    "Porto Alegre", "Arena do Grêmio", 79, 78, "#0D80BF", "#000000"),
+            new ClubeFicticio("botafogo", "Botafogo", "Botafogo de Futebol e Regatas", "RJ",
+                    "Rio de Janeiro", "Nilton Santos", 77, 74, "#000000", "#FFFFFF"),
+            new ClubeFicticio("cruzeiro", "Cruzeiro", "Cruzeiro Esporte Clube", "MG",
+                    "Belo Horizonte", "Mineirão", 76, 75, "#003DA5", "#FFFFFF"),
+            new ClubeFicticio("vasco-da-gama", "Vasco", "Club de Regatas Vasco da Gama", "RJ",
+                    "Rio de Janeiro", "São Januário", 74, 76, "#000000", "#FFFFFF"),
+            new ClubeFicticio("santos", "Santos", "Santos Futebol Clube", "SP",
+                    "Santos", "Vila Belmiro", 73, 85, "#FFFFFF", "#000000"),
+            new ClubeFicticio("athletico-paranaense", "Athletico-PR", "Club Athletico Paranaense", "PR",
+                    "Curitiba", "Ligga Arena", 71, 80, "#E30613", "#000000"),
+            new ClubeFicticio("bahia", "Bahia", "Esporte Clube Bahia", "BA",
+                    "Salvador", "Arena Fonte Nova", 70, 72, "#005CA9", "#E30613"),
+            new ClubeFicticio("fortaleza", "Fortaleza", "Fortaleza Esporte Clube", "CE",
+                    "Fortaleza", "Arena Castelão", 68, 64, "#005CA9", "#E30613"),
+            new ClubeFicticio("sport", "Sport", "Sport Club do Recife", "PE",
+                    "Recife", "Ilha do Retiro", 65, 68, "#E30613", "#000000"),
+            new ClubeFicticio("vitoria", "Vitória", "Esporte Clube Vitória", "BA",
+                    "Salvador", "Barradão", 63, 74, "#E30613", "#000000"),
+            new ClubeFicticio("coritiba", "Coritiba", "Coritiba Foot Ball Club", "PR",
+                    "Curitiba", "Couto Pereira", 62, 70, "#005C3C", "#FFFFFF"),
+            new ClubeFicticio("ceara", "Ceará", "Ceará Sporting Club", "CE",
+                    "Fortaleza", "Arena Castelão", 60, 62, "#000000", "#FFFFFF"),
+            new ClubeFicticio("goias", "Goiás", "Goiás Esporte Clube", "GO",
+                    "Goiânia", "Serrinha", 58, 66, "#009B3A", "#FFFFFF"));
+
+    /** Capacidade e ano de inauguração por estádio, para não inventá-los a partir da reputação. */
+    private static final Map<String, int[]> ESTADIOS = Map.ofEntries(
+            Map.entry("Maracanã", new int[]{78838, 1950}),
+            Map.entry("Allianz Parque", new int[]{43713, 2014}),
+            Map.entry("Neo Química Arena", new int[]{49205, 2014}),
+            Map.entry("Morumbi", new int[]{66795, 1960}),
+            Map.entry("Arena MRV", new int[]{46000, 2023}),
+            Map.entry("Beira-Rio", new int[]{50128, 1969}),
+            Map.entry("Arena do Grêmio", new int[]{55662, 2012}),
+            Map.entry("Nilton Santos", new int[]{44661, 2007}),
+            Map.entry("Mineirão", new int[]{61846, 1965}),
+            Map.entry("São Januário", new int[]{21880, 1927}),
+            Map.entry("Vila Belmiro", new int[]{16068, 1916}),
+            Map.entry("Ligga Arena", new int[]{42372, 1914}),
+            Map.entry("Arena Fonte Nova", new int[]{47907, 2013}),
+            Map.entry("Arena Castelão", new int[]{63903, 1973}),
+            Map.entry("Ilha do Retiro", new int[]{26418, 1937}),
+            Map.entry("Barradão", new int[]{30618, 1986}),
+            Map.entry("Couto Pereira", new int[]{40000, 1932}),
+            Map.entry("Serrinha", new int[]{14525, 1957}));
+
+    /** Ano de fundação por slug de clube. */
+    private static final Map<String, Integer> FUNDACAO = Map.ofEntries(
+            Map.entry("flamengo", 1895), Map.entry("palmeiras", 1914),
+            Map.entry("corinthians", 1910), Map.entry("sao-paulo", 1930),
+            Map.entry("atletico-mineiro", 1908), Map.entry("fluminense", 1902),
+            Map.entry("internacional", 1909), Map.entry("gremio", 1903),
+            Map.entry("botafogo", 1904), Map.entry("cruzeiro", 1921),
+            Map.entry("vasco-da-gama", 1898), Map.entry("santos", 1912),
+            Map.entry("athletico-paranaense", 1924), Map.entry("bahia", 1931),
+            Map.entry("fortaleza", 1918), Map.entry("sport", 1905),
+            Map.entry("vitoria", 1899), Map.entry("coritiba", 1909),
+            Map.entry("ceara", 1914), Map.entry("goias", 1943));
 
     /** Ajuste por posição, um por skill, na ordem de {@link #SKILLS}. */
     private static final Map<String, int[]> AJUSTE_POR_POSICAO = Map.of(
@@ -166,15 +232,31 @@ public final class GeradorDeFixtures {
         return List.of("label,ano_inicio,ano_fim", "2025,2025,2025", "2026,2026,2026");
     }
 
+    /**
+     * Deduplica por chave: Maracanã serve Flamengo e Fluminense, Arena Castelão serve
+     * Fortaleza e Ceará. Emitir duas linhas para o mesmo estádio faria a segunda cair
+     * como atualização no upsert por {@code (nome, cidade)} — funcionaria, mas o
+     * manifesto contaria linhas que não viram registros.
+     */
     private static List<String> estadios() {
         var linhas = new ArrayList<String>();
+        var emitidos = new HashSet<String>();
         linhas.add("chave,nome,cidade,uf,capacidade,ano_inauguracao");
         for (var clube : CLUBES) {
-            linhas.add(juntar(clube.slug(), clube.estadio(), clube.cidade(), clube.uf(),
-                    String.valueOf(20000 + clube.reputacao() * 400),
-                    String.valueOf(1950 + clube.reputacao() % 30)));
+            var chave = chaveDoEstadio(clube);
+            if (!emitidos.add(chave)) {
+                continue;
+            }
+            var dados = ESTADIOS.get(clube.estadio());
+            linhas.add(juntar(chave, clube.estadio(), clube.cidade(), clube.uf(),
+                    String.valueOf(dados[0]), String.valueOf(dados[1])));
         }
         return linhas;
+    }
+
+    /** Nome normalizado: dois clubes no mesmo estádio precisam apontar para a mesma chave. */
+    private static String chaveDoEstadio(ClubeFicticio clube) {
+        return ChaveNatural.normalizar(clube.estadio()).replace(' ', '-');
     }
 
     private static List<String> clubes() {
@@ -183,7 +265,8 @@ public final class GeradorDeFixtures {
                 + "cor_primaria,cor_secundaria,reputacao,qualidade_base,uf_base");
         for (var clube : CLUBES) {
             linhas.add(juntar(clube.slug(), clube.nomeOficial(), clube.nomeCurto(), "",
-                    String.valueOf(1900 + clube.reputacao() % 25), "BRA", clube.uf(), clube.slug(),
+                    String.valueOf(FUNDACAO.get(clube.slug())), "BRA", clube.uf(),
+                    chaveDoEstadio(clube),
                     clube.corPrimaria(), clube.corSecundaria(),
                     String.valueOf(clube.reputacao()), String.valueOf(clube.qualidadeBase()),
                     clube.uf()));
@@ -204,56 +287,68 @@ public final class GeradorDeFixtures {
     private static List<String> competicoes() {
         return List.of(
                 "slug,nome,iso_pais,tipo,nivel,genero",
-                "serie-ouro,Campeonato Nacional Série Ouro,BRA,LIGA,1,MASCULINO",
-                "serie-prata,Campeonato Nacional Série Prata,BRA,LIGA,2,MASCULINO",
-                "copa-nacional,Copa Nacional,BRA,COPA,,MASCULINO");
+                "brasileirao-serie-a,Campeonato Brasileiro Série A,BRA,LIGA,1,MASCULINO",
+                "brasileirao-serie-b,Campeonato Brasileiro Série B,BRA,LIGA,2,MASCULINO",
+                "copa-do-brasil,Copa do Brasil,BRA,COPA,,MASCULINO");
     }
 
     private static List<String> edicoes() {
         return List.of(
                 "competicao_slug,temporada,nome,data_inicio,data_fim",
-                "serie-ouro,2025,Série Ouro 2025,2025-04-12,2025-12-07",
-                "serie-ouro,2026,Série Ouro 2026,2026-04-11,2026-12-06",
-                "copa-nacional,2026,Copa Nacional 2026,2026-03-04,2026-09-23");
+                "brasileirao-serie-a,2025,Campeonato Brasileiro Série A 2025,2025-03-29,2025-12-07",
+                "brasileirao-serie-a,2026,Campeonato Brasileiro Série A 2026,2026-04-11,2026-12-06",
+                "copa-do-brasil,2026,Copa do Brasil 2026,2026-02-18,2026-09-23");
     }
 
     private static List<String> fases() {
         return List.of(
                 "competicao_slug,temporada,ordem,nome,tipo,jogos_por_confronto,"
                         + "tem_gol_fora,tem_prorrogacao,tem_penaltis",
-                "serie-ouro,2025,1,Turno e returno,PONTOS_CORRIDOS,2,false,false,false",
-                "serie-ouro,2026,1,Turno e returno,PONTOS_CORRIDOS,2,false,false,false",
-                "copa-nacional,2026,1,Quartas de final,ELIMINATORIA,2,false,true,true",
-                "copa-nacional,2026,2,Semifinal,ELIMINATORIA,2,false,true,true",
-                "copa-nacional,2026,3,Final,ELIMINATORIA,1,false,true,true");
+                "brasileirao-serie-a,2025,1,Turno e returno,PONTOS_CORRIDOS,2,false,false,false",
+                "brasileirao-serie-a,2026,1,Turno e returno,PONTOS_CORRIDOS,2,false,false,false",
+                "copa-do-brasil,2026,1,Oitavas de final,ELIMINATORIA,2,false,true,true",
+                "copa-do-brasil,2026,2,Quartas de final,ELIMINATORIA,2,false,true,true",
+                "copa-do-brasil,2026,3,Semifinal,ELIMINATORIA,2,false,true,true",
+                "copa-do-brasil,2026,4,Final,ELIMINATORIA,2,false,true,true");
     }
 
     private static List<String> participantes() {
-        // 2026 usa uma permutação fixa para que a tabela não repita a de 2025.
-        var posicoesDe2026 = new int[]{2, 1, 4, 3, 6, 5, 8, 7};
         var linhas = new ArrayList<String>();
         linhas.add("competicao_slug,temporada,clube_slug,posicao_final");
         for (var indice = 0; indice < CLUBES.size(); indice++) {
-            linhas.add(juntar("serie-ouro", "2025", CLUBES.get(indice).slug(),
+            linhas.add(juntar("brasileirao-serie-a", "2025", CLUBES.get(indice).slug(),
                     String.valueOf(indice + 1)));
         }
         for (var indice = 0; indice < CLUBES.size(); indice++) {
-            linhas.add(juntar("serie-ouro", "2026", CLUBES.get(indice).slug(),
-                    String.valueOf(posicoesDe2026[indice])));
+            linhas.add(juntar("brasileirao-serie-a", "2026", CLUBES.get(indice).slug(),
+                    String.valueOf(posicaoEm2026(indice))));
         }
         for (var clube : CLUBES) {
-            linhas.add(juntar("copa-nacional", "2026", clube.slug(), ""));
+            linhas.add(juntar("copa-do-brasil", "2026", clube.slug(), ""));
         }
         return linhas;
+    }
+
+    /**
+     * Troca vizinhos dois a dois: a tabela de 2026 não repete a de 2025, e a
+     * permutação continua sendo uma bijeção sobre 1..N para qualquer N par.
+     */
+    private static int posicaoEm2026(int indice) {
+        return indice % 2 == 0 ? indice + 2 : indice;
     }
 
     private static List<String> regras() {
         var linhas = new ArrayList<String>();
         linhas.add("competicao_slug,temporada,posicao_inicio,posicao_fim,tipo,competicao_destino_slug");
         for (var temporada : List.of("2025", "2026")) {
-            linhas.add(juntar("serie-ouro", temporada, "1", "4", "LIBERTADORES_GRUPOS", ""));
-            linhas.add(juntar("serie-ouro", temporada, "5", "6", "SULAMERICANA", ""));
-            linhas.add(juntar("serie-ouro", temporada, "7", "8", "REBAIXAMENTO", "serie-prata"));
+            linhas.add(juntar("brasileirao-serie-a", temporada, "1", "4",
+                    "LIBERTADORES_GRUPOS", ""));
+            linhas.add(juntar("brasileirao-serie-a", temporada, "5", "6",
+                    "LIBERTADORES_PRE", ""));
+            linhas.add(juntar("brasileirao-serie-a", temporada, "7", "12",
+                    "SULAMERICANA", ""));
+            linhas.add(juntar("brasileirao-serie-a", temporada, "17", "20",
+                    "REBAIXAMENTO", "brasileirao-serie-b"));
         }
         return linhas;
     }

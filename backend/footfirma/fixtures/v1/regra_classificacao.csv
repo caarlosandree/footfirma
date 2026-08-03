@@ -1,7 +1,9 @@
 competicao_slug,temporada,posicao_inicio,posicao_fim,tipo,competicao_destino_slug
-serie-ouro,2025,1,4,LIBERTADORES_GRUPOS,
-serie-ouro,2025,5,6,SULAMERICANA,
-serie-ouro,2025,7,8,REBAIXAMENTO,serie-prata
-serie-ouro,2026,1,4,LIBERTADORES_GRUPOS,
-serie-ouro,2026,5,6,SULAMERICANA,
-serie-ouro,2026,7,8,REBAIXAMENTO,serie-prata
+brasileirao-serie-a,2025,1,4,LIBERTADORES_GRUPOS,
+brasileirao-serie-a,2025,5,6,LIBERTADORES_PRE,
+brasileirao-serie-a,2025,7,12,SULAMERICANA,
+brasileirao-serie-a,2025,17,20,REBAIXAMENTO,brasileirao-serie-b
+brasileirao-serie-a,2026,1,4,LIBERTADORES_GRUPOS,
+brasileirao-serie-a,2026,5,6,LIBERTADORES_PRE,
+brasileirao-serie-a,2026,7,12,SULAMERICANA,
+brasileirao-serie-a,2026,17,20,REBAIXAMENTO,brasileirao-serie-b

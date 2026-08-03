@@ -56,10 +56,10 @@ O log traz uma linha por etapa e o total materializado:
 ```
 Importação 1 — dataset fixtures-v1 — status CONCLUIDA
   temporada: 2 lidos, 2 criados, 0 atualizados, 0 recusados
-  clube: 8 lidos, 8 criados, 0 atualizados, 0 recusados
-  jogador: 176 lidos, 176 criados, 0 atualizados, 0 recusados
+  clube: 20 lidos, 20 criados, 0 atualizados, 0 recusados
+  jogador: 440 lidos, 440 criados, 0 atualizados, 0 recusados
   …
-  overall: 3168 linhas materializadas
+  overall: 7920 linhas materializadas
 ```
 
 Numa segunda execução sobre o mesmo dataset, **todo `criados` é 0** e todo

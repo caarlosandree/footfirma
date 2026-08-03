@@ -13,20 +13,37 @@ Status: verificado em 2026-08-03
 
 ## O que é isto
 
-`v1/` é um dataset **fictício**, versionado no repositório, consumido pelo importador
-(`ImportacaoService`) e pela suíte de testes.
+`v1/` é um dataset versionado no repositório, consumido pelo importador
+(`ImportacaoService`) e pela suíte de testes. Ele mistura duas naturezas, e a
+distinção importa:
 
-Nenhum clube, jogador ou competição aqui corresponde a entidade real. Isso não é
-detalhe: dado derivado de fonte licenciada não entra no repositório, e um dataset
-inventado resolve licença e determinismo de teste com a mesma decisão.
+| Camada | Origem | Por quê |
+|---|---|---|
+| Clubes, estádios, competições | **Reais** | Nome, cidade, estádio, fundação e cores são dados públicos e verificáveis. É o que dá identidade ao jogo. |
+| Jogadores e seus atributos | **Fictícios** | Gerados proceduralmente. Atribuir habilidade e personalidade a pessoas reais exigiria fonte licenciada e emitiria juízo sobre indivíduos. |
+
+Nenhum jogador aqui corresponde a pessoa real. Os nomes saem da combinação de pools
+de prenomes e sobrenomes comuns no Brasil — soam brasileiros porque as peças são
+brasileiras, e nenhuma combinação é uma pessoa identificável.
 
 Este diretório também é o **contrato de formato**. Um pipeline externo que um dia
 substitua o gerador precisa emitir exatamente isto — e então o importador não muda.
 
 ## Conteúdo
 
-2 temporadas (2025, 2026) · 3 competições · 8 clubes · 8 estádios · 176 jogadores
-(22 por clube) · 352 linhas de atributo · 352 vínculos.
+2 temporadas (2025, 2026) · 3 competições · 20 clubes · 18 estádios · 440 jogadores
+(22 por clube) · 880 linhas de atributo · 880 vínculos.
+
+**Os 20 clubes não são a tabela de uma temporada específica.** São os de maior
+expressão nacional; acesso e rebaixamento mudam a composição da Série A todo ano, e
+fixar uma temporada exigiria uma fonte que o gerador não tem. Para usar a composição
+real de um ano, edite a lista `CLUBES` no gerador.
+
+**Dezoito estádios para vinte clubes**: Maracanã serve Flamengo e Fluminense, Arena
+Castelão serve Fortaleza e Ceará. O gerador deduplica por chave; o upsert de estádio
+é por `(nome, cidade)`, então os dois clubes apontam para a mesma linha.
+
+`reputacao` e `qualidade_base` são estimativas de expressão nacional, não medidas.
 
 Os atributos são correlacionados com `clube.reputacao` e com a posição, para que o
 ranking de overall produza ordem com significado em vez de ruído. Entre 2025 e 2026
@@ -143,6 +160,17 @@ commit.
 **Ao regerar, revise `jogador.csv` à mão.** Os nomes saem da combinação de pools de
 prenomes e sobrenomes; nada impede que uma combinação nova coincida com o nome de um
 jogador profissional real. É a única verificação deste dataset que uma máquina não faz.
+
+## Como trocar os clubes
+
+Edite a lista `CLUBES` em `GeradorDeFixtures` e rode `./gradlew gerarFixtures`. Se
+mudar a quantidade de clubes ou de estádios distintos, ajuste as contagens em
+`FixturesIntegridadeTest` e `ImportacaoIdempotenciaTest` — são os únicos lugares que
+as afirmam.
+
+Estádio novo precisa de entrada em `ESTADIOS` (capacidade e ano) e clube novo em
+`FUNDACAO`. As duas falham em `NullPointerException` se você esquecer, o que é
+melhor que gravar um dado inventado.
 
 ## Como validar
 

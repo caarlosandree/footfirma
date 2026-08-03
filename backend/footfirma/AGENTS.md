@@ -86,8 +86,9 @@ A API é read-only por decisão registrada em
 é um `ApplicationRunner` sob o profile `importacao`.
 
 Em banco zerado o catálogo continua **vazio de clubes e jogadores**, e os endpoints
-respondem lista vazia e 404. Rodar a carga de `fixtures/v1` popula 8 clubes fictícios
-e 176 jogadores. Ver `docs/runbooks/importacao.md` e `fixtures/README.md`.
+respondem lista vazia e 404. Rodar a carga de `fixtures/v1` popula 20 clubes **reais**
+da Série A e 440 jogadores **fictícios** — a divisão é deliberada e está explicada em
+`fixtures/README.md`. Ver também `docs/runbooks/importacao.md`.
 
 Duas coisas que a leitura de `importacao` não entrega de imediato:
 

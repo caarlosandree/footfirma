@@ -34,12 +34,12 @@ class FixturesIntegridadeTest {
     }
 
     @Test
-    void deveTerOitoClubesECentoESetentaESeisJogadores() throws IOException {
+    void deveTerVinteClubesEQuatrocentosEQuarentaJogadores() throws IOException {
         var clubes = contarLinhas("clube.csv");
         var jogadores = contarLinhas("jogador.csv");
 
-        assertThat(clubes).isEqualTo(8);
-        assertThat(jogadores).isEqualTo(176);
+        assertThat(clubes).isEqualTo(20);
+        assertThat(jogadores).isEqualTo(440);
     }
 
     @Test
@@ -47,8 +47,17 @@ class FixturesIntegridadeTest {
         var atributos = contarLinhas("jogador_atributo.csv");
         var vinculos = contarLinhas("jogador_vinculo.csv");
 
-        assertThat(atributos).isEqualTo(352);
-        assertThat(vinculos).isEqualTo(352);
+        assertThat(atributos).isEqualTo(880);
+        assertThat(vinculos).isEqualTo(880);
+    }
+
+    @Test
+    void deveDeduplicarEstadioCompartilhadoPorDoisClubes() throws IOException {
+        // Maracanã serve Flamengo e Fluminense; Arena Castelão serve Fortaleza e
+        // Ceará. Vinte clubes, dezoito estádios.
+        var estadios = contarLinhas("estadio.csv");
+
+        assertThat(estadios).isEqualTo(18);
     }
 
     private long contarLinhas(String arquivo) throws IOException {
