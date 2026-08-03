@@ -62,16 +62,17 @@ Migrations, em ordem:
 
 | Arquivo | Cria |
 |---|---|
-| `V1__cria_temporada.sql` | `temporada` |
-| `V2__cria_geografia.sql` | `pais`, `estado` |
-| `V3__popula_geografia.sql` | Brasil + 27 unidades federativas |
-| `V4__cria_clube.sql` | `estadio`, `clube`, `clube_alias`, `clube_referencia_externa` |
-| `V5__cria_jogador.sql` | `posicao`, `jogador`, `jogador_posicao`, `jogador_referencia_externa` |
-| `V6__popula_posicao.sql` | as 9 posições |
-| `V7__cria_jogador_atributo.sql` | `jogador_atributo`, `jogador_atributo_oculto` |
-| `V8__cria_caracteristica_e_vinculo.sql` | `caracteristica`, `jogador_caracteristica`, `jogador_vinculo` |
-| `V9__cria_competicao.sql` | `competicao`, `edicao`, `fase`, `competicao_referencia_externa` |
-| `V10__cria_participante_e_regra.sql` | `edicao_participante`, `regra_classificacao` |
+| `V1__cria_event_publication.sql` | `event_publication` (registro de eventos do Modulith) |
+| `V2__cria_temporada.sql` | `temporada` |
+| `V3__cria_geografia.sql` | `pais`, `estado` |
+| `V4__popula_geografia.sql` | Brasil + 27 unidades federativas |
+| `V5__cria_clube.sql` | `estadio`, `clube`, `clube_alias`, `clube_referencia_externa` |
+| `V6__cria_jogador.sql` | `posicao`, `jogador`, `jogador_posicao`, `jogador_referencia_externa` |
+| `V7__popula_posicao.sql` | as 9 posições |
+| `V8__cria_jogador_atributo.sql` | `jogador_atributo`, `jogador_atributo_oculto` |
+| `V9__cria_caracteristica_e_vinculo.sql` | `caracteristica`, `jogador_caracteristica`, `jogador_vinculo` |
+| `V10__cria_competicao.sql` | `competicao`, `edicao`, `fase`, `competicao_referencia_externa` |
+| `V11__cria_participante_e_regra.sql` | `edicao_participante`, `regra_classificacao` |
 
 ---
 
@@ -85,6 +86,7 @@ Prepara o terreno: declara os módulos abertos existentes, torna a configuraçã
 - Create: `src/main/java/br/com/api/footfirma/shared/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/shared/exception/RecursoNaoEncontradoException.java`
 - Create: `src/main/java/br/com/api/footfirma/shared/exception/TratadorDeErros.java`
+- Create: `src/main/resources/db/migration/V1__cria_event_publication.sql`
 - Modify: `src/test/java/br/com/api/footfirma/TestcontainersConfiguration.java` (visibilidade)
 - Modify: `src/main/resources/application.properties`
 - Test: `src/test/java/br/com/api/footfirma/ModularidadeTest.java`
@@ -92,7 +94,7 @@ Prepara o terreno: declara os módulos abertos existentes, torna a configuraçã
 **Interfaces:**
 - Produces: `RecursoNaoEncontradoException(String mensagem)` — exceção lançada por todo service quando um slug não existe. `TestcontainersConfiguration` público, importável por qualquer teste via `@Import`.
 
-- [ ] **Step 1: Declarar os módulos abertos e tornar Testcontainers reutilizável**
+- [x] **Step 1: Declarar os módulos abertos e tornar Testcontainers reutilizável**
 
 `config/package-info.java`:
 
@@ -121,7 +123,7 @@ Em `TestcontainersConfiguration.java`, troque a declaração da classe de packag
 public class TestcontainersConfiguration {
 ```
 
-- [ ] **Step 2: Escrever o teste de modularidade**
+- [x] **Step 2: Escrever o teste de modularidade**
 
 `src/test/java/br/com/api/footfirma/ModularidadeTest.java`:
 
@@ -148,12 +150,12 @@ class ModularidadeTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para confirmar que passa**
+- [x] **Step 3: Rodar o teste para confirmar que passa**
 
 Run: `./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS — só existem `config` e `shared`, ambos abertos, sem violação possível ainda. Este teste é a rede que protegerá as tarefas seguintes.
 
-- [ ] **Step 4: Criar a exceção de recurso ausente e o tratador de erros**
+- [x] **Step 4: Criar a exceção de recurso ausente e o tratador de erros**
 
 `shared/exception/RecursoNaoEncontradoException.java`:
 
@@ -205,7 +207,7 @@ class TratadorDeErros {
 }
 ```
 
-- [ ] **Step 5: Configurar a segurança**
+- [x] **Step 5: Configurar a segurança**
 
 O catálogo é dado público de futebol, sem informação pessoal de usuário do sistema. As rotas de leitura são liberadas **uma a uma**, deliberadamente — nunca `anyRequest().permitAll()`.
 
@@ -243,7 +245,7 @@ public class SecurityConfig {
 
 `csrf().disable()` é válido porque a API é stateless e não autentica por cookie. Se isso mudar, CSRF volta a ser obrigatório.
 
-- [ ] **Step 6: Configurar Flyway e validação de schema**
+- [x] **Step 6: Configurar Flyway e validação de schema**
 
 Acrescente ao final de `src/main/resources/application.properties`:
 
@@ -258,16 +260,20 @@ spring.threads.virtual.enabled=true
 
 `open-in-view=false` impede que associações LAZY sejam carregadas na serialização da resposta, que é a origem mais comum de N+1 silencioso.
 
-- [ ] **Step 7: Compilar e rodar os testes existentes**
+- [x] **Step 7: Compilar e rodar os testes existentes**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*FootfirmaApplicationTests'`
-Expected: PASS nos dois. Se `FootfirmaApplicationTests` falhar por schema vazio, é esperado até a Task 2 — nesse caso confirme que o erro é de Flyway sem migrations e siga.
+Expected: PASS nos dois — a `V1__cria_event_publication.sql` é o que sustenta o
+`FootfirmaApplicationTests` verde. Sem ela, `ddl-auto=validate` derruba o contexto com
+`missing table [event_publication]`: o `spring-modulith-starter-jpa` mapeia a entidade
+`DefaultJpaEventPublication` para essa tabela e ela precisa existir desde o começo.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/main/java/br/com/api/footfirma/config src/main/java/br/com/api/footfirma/shared \
         src/main/resources/application.properties \
+        src/main/resources/db/migration/V1__cria_event_publication.sql \
         src/test/java/br/com/api/footfirma/ModularidadeTest.java \
         src/test/java/br/com/api/footfirma/TestcontainersConfiguration.java
 git commit -m "feat(config): adiciona fundação de modularidade, segurança e erros
@@ -276,7 +282,8 @@ git commit -m "feat(config): adiciona fundação de modularidade, segurança e e
 - Cria ModularidadeTest para guardar as fronteiras desde o início
 - Adiciona TratadorDeErros com ProblemDetail (RFC 9457)
 - SecurityConfig libera leitura do catálogo rota a rota
-- Fixa ddl-auto=validate: o schema passa a ser só do Flyway"
+- Fixa ddl-auto=validate: o schema passa a ser só do Flyway
+- Migration V1 cria event_publication, exigida pelo Modulith sob validate"
 ```
 
 ---
@@ -286,7 +293,7 @@ git commit -m "feat(config): adiciona fundação de modularidade, segurança e e
 Menor módulo do sistema e o primeiro a ser criado porque `jogador` e `competicao` dependem dele. Estabelece o padrão que todos os outros módulos seguem.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V1__cria_temporada.sql`
+- Create: `src/main/resources/db/migration/V2__cria_temporada.sql`
 - Create: `src/main/java/br/com/api/footfirma/temporada/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/temporada/TemporadaService.java`
 - Create: `src/main/java/br/com/api/footfirma/temporada/dto/TemporadaResumo.java`
@@ -299,9 +306,9 @@ Menor módulo do sistema e o primeiro a ser criado porque `jogador` e `competica
 **Interfaces:**
 - Produces: `TemporadaService.buscarPorLabel(String label) -> Optional<TemporadaResumo>` e `TemporadaService.listarOrdenadas() -> List<TemporadaResumo>`. `TemporadaResumo(Long id, String label, int anoInicio, int anoFim)`. Os módulos `jogador` e `competicao` consomem `TemporadaService`; suas entidades referenciam a tabela `temporada` por FK, mas **nunca** importam a classe `Temporada`.
 
-- [ ] **Step 1: Escrever a migration**
+- [x] **Step 1: Escrever a migration**
 
-`src/main/resources/db/migration/V1__cria_temporada.sql`:
+`src/main/resources/db/migration/V2__cria_temporada.sql`:
 
 ```sql
 -- Temporada é referenciada por jogador_atributo, jogador_vinculo e edicao.
@@ -318,7 +325,7 @@ create table temporada (
 comment on column temporada.label is 'Rótulo exibível: "2025" para temporada de ano civil, "2025/26" para temporada europeia';
 ```
 
-- [ ] **Step 2: Escrever o teste de repositório (vai falhar)**
+- [x] **Step 2: Escrever o teste de repositório (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/temporada/TemporadaRepositoryTest.java`:
 
@@ -376,12 +383,12 @@ class TemporadaRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*TemporadaRepositoryTest'`
 Expected: FAIL na compilação — `Temporada` e `TemporadaRepository` não existem.
 
-- [ ] **Step 4: Criar a entidade e o repositório**
+- [x] **Step 4: Criar a entidade e o repositório**
 
 `temporada/package-info.java`:
 
@@ -474,12 +481,12 @@ public interface TemporadaRepository extends JpaRepository<Temporada, Long> {
 }
 ```
 
-- [ ] **Step 5: Rodar o teste para verificar que passa**
+- [x] **Step 5: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*TemporadaRepositoryTest'`
 Expected: PASS nos dois testes. Se falhar com erro de validação de schema, compare os nomes de coluna da entidade com a migration — `ddl-auto=validate` está ativo justamente para pegar isso.
 
-- [ ] **Step 6: Criar o DTO, o mapper e o serviço público**
+- [x] **Step 6: Criar o DTO, o mapper e o serviço público**
 
 `temporada/dto/TemporadaResumo.java`:
 
@@ -562,15 +569,15 @@ class TemporadaServiceImpl implements TemporadaService {
 }
 ```
 
-- [ ] **Step 7: Compilar e rodar modularidade**
+- [x] **Step 7: Compilar e rodar modularidade**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*TemporadaRepositoryTest'`
 Expected: PASS. Se o MapStruct reclamar de campo não mapeado, é o `unmappedTargetPolicy=ERROR` — todo campo do `TemporadaResumo` precisa de origem no `Temporada`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
-git add src/main/resources/db/migration/V1__cria_temporada.sql \
+git add src/main/resources/db/migration/V2__cria_temporada.sql \
         src/main/java/br/com/api/footfirma/temporada \
         src/test/java/br/com/api/footfirma/temporada
 git commit -m "feat(temporada): cria módulo de temporada
@@ -579,7 +586,7 @@ Primeiro módulo de domínio do projeto. Estabelece o padrão que os demais
 seguem: interface pública na raiz, entidade e repositório em subpacotes
 internos, DTO via MapStruct.
 
-- Migration V1 cria a tabela temporada
+- Migration V2 cria a tabela temporada
 - TemporadaService expõe busca por label e listagem ordenada"
 ```
 
@@ -590,8 +597,8 @@ internos, DTO via MapStruct.
 País e unidade federativa. Referenciado por `clube` e `jogador`. Inclui seed dos dados reais, porque país e UF são catálogo estável — não dependem do pipeline de importação.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V2__cria_geografia.sql`
-- Create: `src/main/resources/db/migration/V3__popula_geografia.sql`
+- Create: `src/main/resources/db/migration/V3__cria_geografia.sql`
+- Create: `src/main/resources/db/migration/V4__popula_geografia.sql`
 - Create: `src/main/java/br/com/api/footfirma/geografia/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/geografia/GeografiaService.java`
 - Create: `src/main/java/br/com/api/footfirma/geografia/dto/PaisResumo.java`
@@ -608,9 +615,9 @@ País e unidade federativa. Referenciado por `clube` e `jogador`. Inclui seed do
 **Interfaces:**
 - Produces: `GeografiaService.buscarPaisPorIso(String iso) -> Optional<PaisResumo>`, `GeografiaService.listarEstadosDoPais(String iso) -> List<EstadoResumo>`. `PaisResumo(Long id, String isoCode, String nome, String confederacao)`, `EstadoResumo(Long id, String uf, String nome)`.
 
-- [ ] **Step 1: Escrever as migrations**
+- [x] **Step 1: Escrever as migrations**
 
-`src/main/resources/db/migration/V2__cria_geografia.sql`:
+`src/main/resources/db/migration/V3__cria_geografia.sql`:
 
 ```sql
 create table pais (
@@ -632,7 +639,7 @@ create table estado (
 create index idx_estado_pais on estado (pais_id);
 ```
 
-`src/main/resources/db/migration/V3__popula_geografia.sql`:
+`src/main/resources/db/migration/V4__popula_geografia.sql`:
 
 ```sql
 -- País e unidade federativa são catálogo estável: não dependem do pipeline de
@@ -654,7 +661,7 @@ from pais p,
 where p.iso_code = 'BRA';
 ```
 
-- [ ] **Step 2: Escrever o teste (vai falhar)**
+- [x] **Step 2: Escrever o teste (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/geografia/GeografiaRepositoryTest.java`:
 
@@ -703,12 +710,12 @@ class GeografiaRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*GeografiaRepositoryTest'`
 Expected: FAIL na compilação — as classes de `geografia` não existem.
 
-- [ ] **Step 4: Criar o enum, as entidades e os repositórios**
+- [x] **Step 4: Criar o enum, as entidades e os repositórios**
 
 `geografia/package-info.java`:
 
@@ -897,12 +904,12 @@ public interface EstadoRepository extends JpaRepository<Estado, Long> {
 }
 ```
 
-- [ ] **Step 5: Rodar o teste para verificar que passa**
+- [x] **Step 5: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*GeografiaRepositoryTest'`
-Expected: PASS. Os 27 estados vêm da migration de seed, não do teste — se vier 0, a `V3` não rodou; confira o log do Flyway na saída.
+Expected: PASS. Os 27 estados vêm da migration de seed, não do teste — se vier 0, a `V4` não rodou; confira o log do Flyway na saída.
 
-- [ ] **Step 6: Criar DTOs, mapper e serviço público**
+- [x] **Step 6: Criar DTOs, mapper e serviço público**
 
 `geografia/dto/PaisResumo.java`:
 
@@ -1004,22 +1011,22 @@ class GeografiaServiceImpl implements GeografiaService {
 }
 ```
 
-- [ ] **Step 7: Compilar e verificar modularidade**
+- [x] **Step 7: Compilar e verificar modularidade**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*GeografiaRepositoryTest'`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
-git add src/main/resources/db/migration/V2__cria_geografia.sql \
-        src/main/resources/db/migration/V3__popula_geografia.sql \
+git add src/main/resources/db/migration/V3__cria_geografia.sql \
+        src/main/resources/db/migration/V4__popula_geografia.sql \
         src/main/java/br/com/api/footfirma/geografia \
         src/test/java/br/com/api/footfirma/geografia
 git commit -m "feat(geografia): cria módulo de país e unidade federativa
 
-- Migration V2 cria pais e estado
-- Migration V3 popula Brasil e as 27 UFs como seed versionado, por serem
+- Migration V3 cria pais e estado
+- Migration V4 popula Brasil e as 27 UFs como seed versionado, por serem
   catálogo estável que não depende do pipeline de importação
 - GeografiaService expõe busca de país por ISO e listagem de estados"
 ```
@@ -1031,7 +1038,7 @@ git commit -m "feat(geografia): cria módulo de país e unidade federativa
 Clube, estádio, aliases de nome e referência externa. Os aliases resolvem "Atlético-MG" / "Atlético Mineiro" / "Clube Atlético Mineiro" para o mesmo clube — sem eles, o importador do Plano 3 duplica clubes a cada fonte nova.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V4__cria_clube.sql`
+- Create: `src/main/resources/db/migration/V5__cria_clube.sql`
 - Create: `src/main/java/br/com/api/footfirma/clube/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/clube/ClubeService.java`
 - Create: `src/main/java/br/com/api/footfirma/clube/dto/ClubeResumo.java`
@@ -1054,9 +1061,9 @@ Clube, estádio, aliases de nome e referência externa. Os aliases resolvem "Atl
 
 **Decisão de modelagem:** as FKs para `pais` e `estado` são colunas `Long` (`paisId`, `estadoId`), não `@ManyToOne`. Um `@ManyToOne` para `Pais` obrigaria o módulo `clube` a importar `geografia.domain.Pais`, o que o `ModularidadeTest` reprova. Quando `clube` precisar do nome do estado, pede ao `GeografiaService`.
 
-- [ ] **Step 1: Escrever a migration**
+- [x] **Step 1: Escrever a migration**
 
-`src/main/resources/db/migration/V4__cria_clube.sql`:
+`src/main/resources/db/migration/V5__cria_clube.sql`:
 
 ```sql
 create table estadio (
@@ -1118,7 +1125,7 @@ create table clube_referencia_externa (
 create index idx_clube_referencia_externa_clube on clube_referencia_externa (clube_id);
 ```
 
-- [ ] **Step 2: Escrever a factory de teste**
+- [x] **Step 2: Escrever a factory de teste**
 
 Massa de teste repetida vira factory, conforme `.rules/java-testing.md`.
 
@@ -1144,7 +1151,7 @@ final class ClubeFactory {
 }
 ```
 
-- [ ] **Step 3: Escrever o teste de repositório (vai falhar)**
+- [x] **Step 3: Escrever o teste de repositório (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/clube/ClubeRepositoryTest.java`:
 
@@ -1218,12 +1225,12 @@ class ClubeRepositoryTest {
 }
 ```
 
-- [ ] **Step 4: Rodar o teste para verificar que falha**
+- [x] **Step 4: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*ClubeRepositoryTest'`
 Expected: FAIL na compilação — as classes de `clube` não existem.
 
-- [ ] **Step 5: Criar enum, entidades e repositórios**
+- [x] **Step 5: Criar enum, entidades e repositórios**
 
 `clube/package-info.java`:
 
@@ -1536,12 +1543,12 @@ public interface ClubeAliasRepository extends JpaRepository<ClubeAlias, Long> {
 }
 ```
 
-- [ ] **Step 6: Rodar o teste para verificar que passa**
+- [x] **Step 6: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*ClubeRepositoryTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 7: Criar DTOs, mapper e serviço público**
+- [x] **Step 7: Criar DTOs, mapper e serviço público**
 
 `clube/dto/ClubeResumo.java`:
 
@@ -1662,20 +1669,20 @@ class ClubeServiceImpl implements ClubeService {
 }
 ```
 
-- [ ] **Step 8: Compilar e verificar modularidade**
+- [x] **Step 8: Compilar e verificar modularidade**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*ClubeRepositoryTest'`
 Expected: PASS. Se `ModularidadeTest` acusar dependência de `clube` para `geografia.domain`, você usou `@ManyToOne` para `Pais` ou `Estado` — troque por coluna `Long`, conforme a decisão de modelagem desta tarefa.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
-git add src/main/resources/db/migration/V4__cria_clube.sql \
+git add src/main/resources/db/migration/V5__cria_clube.sql \
         src/main/java/br/com/api/footfirma/clube \
         src/test/java/br/com/api/footfirma/clube
 git commit -m "feat(clube): cria módulo de clube, estádio e aliases
 
-- Migration V4 cria estadio, clube, clube_alias e clube_referencia_externa
+- Migration V5 cria estadio, clube, clube_alias e clube_referencia_externa
 - Aliases resolvem variações de nome entre fontes, evitando clube duplicado
   na importação do Plano 3
 - FKs para pais e estado são colunas Long, não @ManyToOne: entidade JPA não
@@ -1689,8 +1696,8 @@ git commit -m "feat(clube): cria módulo de clube, estádio e aliases
 Primeira das três tarefas do módulo maior do sistema. Cria as posições (seed fixo) e a entidade central do jogo.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V5__cria_jogador.sql`
-- Create: `src/main/resources/db/migration/V6__popula_posicao.sql`
+- Create: `src/main/resources/db/migration/V6__cria_jogador.sql`
+- Create: `src/main/resources/db/migration/V7__popula_posicao.sql`
 - Create: `src/main/java/br/com/api/footfirma/jogador/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/Posicao.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/Setor.java`
@@ -1707,9 +1714,9 @@ Primeira das três tarefas do módulo maior do sistema. Cria as posições (seed
 - Consumes: tabela `pais` (FK `Long`), tabela `clube` (usada só na Task 7).
 - Produces: entidade `Jogador` com `chaveNatural` — string única calculada pelo pipeline como `normalizar(nome_completo)|data_nascimento|iso_pais`. É a chave de idempotência do importador no Plano 3. Enum `Posicao.codigo` com os 9 valores `GOL, ZAG, LTD, LTE, VOL, MEC, MEA, PTA, ATA`.
 
-- [ ] **Step 1: Escrever as migrations**
+- [x] **Step 1: Escrever as migrations**
 
-`src/main/resources/db/migration/V5__cria_jogador.sql`:
+`src/main/resources/db/migration/V6__cria_jogador.sql`:
 
 ```sql
 create table posicao (
@@ -1767,7 +1774,7 @@ create table jogador_referencia_externa (
 create index idx_jogador_referencia_externa_jogador on jogador_referencia_externa (jogador_id);
 ```
 
-`src/main/resources/db/migration/V6__popula_posicao.sql`:
+`src/main/resources/db/migration/V7__popula_posicao.sql`:
 
 ```sql
 -- As 9 posições são catálogo fixo: o modelo de overall do Plano 2 tem um perfil
@@ -1784,7 +1791,7 @@ insert into posicao (codigo, nome, setor, ordem) values
     ('ATA', 'Atacante',          'ATAQUE',  9);
 ```
 
-- [ ] **Step 2: Escrever a factory de teste**
+- [x] **Step 2: Escrever a factory de teste**
 
 `src/test/java/br/com/api/footfirma/jogador/JogadorFactory.java`:
 
@@ -1820,7 +1827,7 @@ final class JogadorFactory {
 }
 ```
 
-- [ ] **Step 3: Escrever o teste de repositório (vai falhar)**
+- [x] **Step 3: Escrever o teste de repositório (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/jogador/JogadorRepositoryTest.java`:
 
@@ -1904,12 +1911,12 @@ class JogadorRepositoryTest {
 
 O terceiro teste é o que prova que a reimportação do Plano 3 não pode duplicar jogador.
 
-- [ ] **Step 4: Rodar o teste para verificar que falha**
+- [x] **Step 4: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*JogadorRepositoryTest'`
 Expected: FAIL na compilação — as classes de `jogador` não existem.
 
-- [ ] **Step 5: Criar enums e a entidade Posicao**
+- [x] **Step 5: Criar enums e a entidade Posicao**
 
 `jogador/package-info.java`:
 
@@ -2008,7 +2015,7 @@ public class Posicao {
 }
 ```
 
-- [ ] **Step 6: Criar a entidade Jogador e os repositórios**
+- [x] **Step 6: Criar a entidade Jogador e os repositórios**
 
 `jogador/domain/Jogador.java`:
 
@@ -2241,25 +2248,25 @@ public interface JogadorRepository extends JpaRepository<Jogador, Long> {
 }
 ```
 
-- [ ] **Step 7: Rodar o teste para verificar que passa**
+- [x] **Step 7: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*JogadorRepositoryTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 8: Compilar, verificar modularidade e commitar**
+- [x] **Step 8: Compilar, verificar modularidade e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
 
 ```bash
-git add src/main/resources/db/migration/V5__cria_jogador.sql \
-        src/main/resources/db/migration/V6__popula_posicao.sql \
+git add src/main/resources/db/migration/V6__cria_jogador.sql \
+        src/main/resources/db/migration/V7__popula_posicao.sql \
         src/main/java/br/com/api/footfirma/jogador \
         src/test/java/br/com/api/footfirma/jogador
 git commit -m "feat(jogador): cria posição e dados pessoais do jogador
 
-- Migration V5 cria posicao, jogador, jogador_posicao e a referência externa
-- Migration V6 popula as 9 posições como catálogo fixo
+- Migration V6 cria posicao, jogador, jogador_posicao e a referência externa
+- Migration V7 popula as 9 posições como catálogo fixo
 - chave_natural com unique é a garantia de idempotência da importação:
   reimportar o mesmo jogador não pode criar uma segunda linha
 - semente determinística será a origem dos atributos ocultos no Plano 2"
@@ -2272,7 +2279,7 @@ git commit -m "feat(jogador): cria posição e dados pessoais do jogador
 As 18 skills versionadas por temporada, mais os 8 atributos ocultos de personalidade. É a tabela que o Plano 2 consome para calcular overall.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V7__cria_jogador_atributo.sql`
+- Create: `src/main/resources/db/migration/V8__cria_jogador_atributo.sql`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/JogadorAtributo.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/JogadorAtributoOculto.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/FonteAtributo.java`
@@ -2284,9 +2291,9 @@ As 18 skills versionadas por temporada, mais os 8 atributos ocultos de personali
 - Consumes: `Jogador` e `Posicao` (Task 5); tabela `temporada` por FK `Long` (Task 2).
 - Produces: `JogadorAtributo` com os 18 campos `Integer` (0–99) nomeados exatamente: `ritmo, forca, folego, salto, agilidade, passe, drible, cruzamento, frieza, finalizacao, cabeceio, falta, penalti, desarme, marcacao, golReflexo, golPosicionamento, golManejo` — mais `potencialBase`, `potencialVariacao`, `fonteAtributo`. **O Plano 2 depende desses nomes exatos** para montar os perfis de peso.
 
-- [ ] **Step 1: Escrever a migration**
+- [x] **Step 1: Escrever a migration**
 
-`src/main/resources/db/migration/V7__cria_jogador_atributo.sql`:
+`src/main/resources/db/migration/V8__cria_jogador_atributo.sql`:
 
 ```sql
 -- Atributos são versionados por temporada: o mesmo jogador em 2025 e 2026 são
@@ -2350,7 +2357,7 @@ create table jogador_atributo_oculto (
 );
 ```
 
-- [ ] **Step 2: Escrever o teste (vai falhar)**
+- [x] **Step 2: Escrever o teste (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/jogador/JogadorAtributoRepositoryTest.java`:
 
@@ -2467,12 +2474,12 @@ class JogadorAtributoRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*JogadorAtributoRepositoryTest'`
 Expected: FAIL na compilação — `JogadorAtributo` não existe.
 
-- [ ] **Step 4: Criar o enum e as entidades**
+- [x] **Step 4: Criar o enum e as entidades**
 
 `jogador/domain/FonteAtributo.java`:
 
@@ -2698,7 +2705,7 @@ public class JogadorAtributoOculto {
 }
 ```
 
-- [ ] **Step 5: Criar os repositórios**
+- [x] **Step 5: Criar os repositórios**
 
 `jogador/repository/JogadorAtributoRepository.java`:
 
@@ -2728,23 +2735,23 @@ public interface JogadorAtributoOcultoRepository extends JpaRepository<JogadorAt
 }
 ```
 
-- [ ] **Step 6: Rodar o teste para verificar que passa**
+- [x] **Step 6: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*JogadorAtributoRepositoryTest'`
 Expected: PASS nos três testes. O terceiro prova que o `check` de escala 0–99 está no banco, não só na aplicação.
 
-- [ ] **Step 7: Compilar e commitar**
+- [x] **Step 7: Compilar e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
 
 ```bash
-git add src/main/resources/db/migration/V7__cria_jogador_atributo.sql \
+git add src/main/resources/db/migration/V8__cria_jogador_atributo.sql \
         src/main/java/br/com/api/footfirma/jogador \
         src/test/java/br/com/api/footfirma/jogador
 git commit -m "feat(jogador): adiciona as 18 skills e os atributos ocultos
 
-- Migration V7 cria jogador_atributo (versionado por temporada) e
+- Migration V8 cria jogador_atributo (versionado por temporada) e
   jogador_atributo_oculto (estável por jogador)
 - Escala 0-99 garantida por check no banco, não só por validação Java
 - unique (jogador_id, temporada_id) impede dois conjuntos na mesma temporada
@@ -2758,7 +2765,7 @@ git commit -m "feat(jogador): adiciona as 18 skills e os atributos ocultos
 Fecha o módulo `jogador`. As características são as skills especiais (voleio, bicicleta, cobrança de falta); o vínculo é o elenco de cada clube por temporada, e é o que a API de elenco consulta.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V8__cria_caracteristica_e_vinculo.sql`
+- Create: `src/main/resources/db/migration/V9__cria_caracteristica_e_vinculo.sql`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/Caracteristica.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/CategoriaCaracteristica.java`
 - Create: `src/main/java/br/com/api/footfirma/jogador/domain/JogadorCaracteristica.java`
@@ -2772,9 +2779,9 @@ Fecha o módulo `jogador`. As características são as skills especiais (voleio,
 - Consumes: `Jogador` (Task 5); tabelas `clube` e `temporada` por FK `Long`.
 - Produces: `JogadorVinculoRepository.buscarElenco(Long clubeId, Long temporadaId) -> List<JogadorVinculo>` com `join fetch` do jogador e da posição — a consulta que a API de elenco usa, e a que evitaria N+1 sobre 30 jogadores.
 
-- [ ] **Step 1: Escrever a migration**
+- [x] **Step 1: Escrever a migration**
 
-`src/main/resources/db/migration/V8__cria_caracteristica_e_vinculo.sql`:
+`src/main/resources/db/migration/V9__cria_caracteristica_e_vinculo.sql`:
 
 ```sql
 -- Características são as skills especiais importadas dos Traits/PlayStyles da
@@ -2831,7 +2838,7 @@ create index idx_jogador_vinculo_clube_temporada on jogador_vinculo (clube_id, t
 create index idx_jogador_vinculo_jogador on jogador_vinculo (jogador_id);
 ```
 
-- [ ] **Step 2: Escrever o teste (vai falhar)**
+- [x] **Step 2: Escrever o teste (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/jogador/JogadorVinculoRepositoryTest.java`:
 
@@ -2941,12 +2948,12 @@ class JogadorVinculoRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*JogadorVinculoRepositoryTest'`
 Expected: FAIL na compilação — `JogadorVinculo` e `Caracteristica` não existem.
 
-- [ ] **Step 4: Criar enums e entidades**
+- [x] **Step 4: Criar enums e entidades**
 
 `jogador/domain/CategoriaCaracteristica.java`:
 
@@ -3185,7 +3192,7 @@ public class JogadorVinculo {
 }
 ```
 
-- [ ] **Step 5: Criar os repositórios**
+- [x] **Step 5: Criar os repositórios**
 
 `jogador/repository/CaracteristicaRepository.java`:
 
@@ -3231,23 +3238,23 @@ public interface JogadorVinculoRepository extends JpaRepository<JogadorVinculo, 
 }
 ```
 
-- [ ] **Step 6: Rodar o teste para verificar que passa**
+- [x] **Step 6: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*JogadorVinculoRepositoryTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 7: Compilar e commitar**
+- [x] **Step 7: Compilar e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
 
 ```bash
-git add src/main/resources/db/migration/V8__cria_caracteristica_e_vinculo.sql \
+git add src/main/resources/db/migration/V9__cria_caracteristica_e_vinculo.sql \
         src/main/java/br/com/api/footfirma/jogador \
         src/test/java/br/com/api/footfirma/jogador
 git commit -m "feat(jogador): adiciona características especiais e vínculo com clube
 
-- Migration V8 cria caracteristica (com as 13 do catálogo), a associação com
+- Migration V9 cria caracteristica (com as 13 do catálogo), a associação com
   jogador e jogador_vinculo
 - buscarElenco usa join fetch duplo para evitar N+1 ao listar um elenco
 - Vínculo é por temporada: o mesmo jogador pode trocar de clube no ano"
@@ -3260,8 +3267,8 @@ git commit -m "feat(jogador): adiciona características especiais e vínculo com
 Competição, edição por temporada, fases e participantes — mais as regras de classificação, que são a decisão de design central deste módulo: acesso, rebaixamento e vaga continental são **dados**, não código. Um campeonato com formato novo é um `INSERT`, não uma classe nova.
 
 **Files:**
-- Create: `src/main/resources/db/migration/V9__cria_competicao.sql`
-- Create: `src/main/resources/db/migration/V10__cria_participante_e_regra.sql`
+- Create: `src/main/resources/db/migration/V10__cria_competicao.sql`
+- Create: `src/main/resources/db/migration/V11__cria_participante_e_regra.sql`
 - Create: `src/main/java/br/com/api/footfirma/competicao/package-info.java`
 - Create: `src/main/java/br/com/api/footfirma/competicao/CompeticaoService.java`
 - Create: `src/main/java/br/com/api/footfirma/competicao/dto/CompeticaoResumo.java`
@@ -3278,9 +3285,9 @@ Competição, edição por temporada, fases e participantes — mais as regras d
 - Consumes: tabelas `pais`, `clube`, `temporada` por FK `Long`.
 - Produces: `CompeticaoService.listarPorPais(String isoPais) -> List<CompeticaoResumo>`, `CompeticaoService.buscarEdicao(String slugCompeticao, String labelTemporada) -> Optional<EdicaoDetalhe>`. `CompeticaoResumo(Long id, String slug, String nome, String tipo, Integer nivel)`, `EdicaoDetalhe(Long id, String nome, String competicao, LocalDate dataInicio, LocalDate dataFim, List<FaseResumo> fases, List<RegraClassificacaoResumo> regras)`.
 
-- [ ] **Step 1: Escrever as migrations**
+- [x] **Step 1: Escrever as migrations**
 
-`src/main/resources/db/migration/V9__cria_competicao.sql`:
+`src/main/resources/db/migration/V10__cria_competicao.sql`:
 
 ```sql
 create table competicao (
@@ -3337,7 +3344,7 @@ create table competicao_referencia_externa (
 create index idx_competicao_referencia_externa_competicao on competicao_referencia_externa (competicao_id);
 ```
 
-`src/main/resources/db/migration/V10__cria_participante_e_regra.sql`:
+`src/main/resources/db/migration/V11__cria_participante_e_regra.sql`:
 
 ```sql
 create table edicao_participante (
@@ -3366,7 +3373,7 @@ create table regra_classificacao (
 create index idx_regra_classificacao_edicao on regra_classificacao (edicao_id);
 ```
 
-- [ ] **Step 2: Escrever o teste (vai falhar)**
+- [x] **Step 2: Escrever o teste (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/competicao/CompeticaoRepositoryTest.java`:
 
@@ -3474,12 +3481,12 @@ class CompeticaoRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*CompeticaoRepositoryTest'`
 Expected: FAIL na compilação — as classes de `competicao` não existem.
 
-- [ ] **Step 4: Criar os enums e o package-info**
+- [x] **Step 4: Criar os enums e o package-info**
 
 `competicao/package-info.java`:
 
@@ -3518,7 +3525,7 @@ public enum TipoClassificacao {
 }
 ```
 
-- [ ] **Step 5: Criar as entidades**
+- [x] **Step 5: Criar as entidades**
 
 `competicao/domain/Competicao.java`:
 
@@ -3899,7 +3906,7 @@ public class RegraClassificacao {
 }
 ```
 
-- [ ] **Step 6: Criar os repositórios**
+- [x] **Step 6: Criar os repositórios**
 
 `competicao/repository/CompeticaoRepository.java`:
 
@@ -3973,12 +3980,12 @@ public interface RegraClassificacaoRepository extends JpaRepository<RegraClassif
 }
 ```
 
-- [ ] **Step 7: Rodar o teste para verificar que passa**
+- [x] **Step 7: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*CompeticaoRepositoryTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 8: Criar DTOs, mapper e serviço público**
+- [x] **Step 8: Criar DTOs, mapper e serviço público**
 
 `competicao/dto/CompeticaoResumo.java`:
 
@@ -4144,19 +4151,19 @@ class CompeticaoServiceImpl implements CompeticaoService {
 }
 ```
 
-- [ ] **Step 9: Compilar, verificar modularidade e commitar**
+- [x] **Step 9: Compilar, verificar modularidade e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*CompeticaoRepositoryTest'`
 Expected: PASS. `competicao` agora depende de `temporada` pela interface pública — dependência legítima e visível na documentação gerada pelo `Documenter`.
 
 ```bash
-git add src/main/resources/db/migration/V9__cria_competicao.sql \
-        src/main/resources/db/migration/V10__cria_participante_e_regra.sql \
+git add src/main/resources/db/migration/V10__cria_competicao.sql \
+        src/main/resources/db/migration/V11__cria_participante_e_regra.sql \
         src/main/java/br/com/api/footfirma/competicao \
         src/test/java/br/com/api/footfirma/competicao
 git commit -m "feat(competicao): cria módulo de competição, edição e fases
 
-- Migrations V9 e V10 criam competicao, edicao, fase, edicao_participante
+- Migrations V10 e V11 criam competicao, edicao, fase, edicao_participante
   e regra_classificacao
 - Regra de acesso, rebaixamento e vaga continental é dado: campeonato com
   formato novo é INSERT, não classe nova
@@ -4178,7 +4185,7 @@ Primeiro endpoint do projeto. Estabelece o padrão de controller que as duas tar
 - Consumes: `ClubeService.listar(Pageable)` e `ClubeService.buscarPorSlug(String)` (Task 4); `RecursoNaoEncontradoException` (Task 1).
 - Produces: `GET /api/v1/clubes` (paginado) e `GET /api/v1/clubes/{slug}`.
 
-- [ ] **Step 1: Escrever o teste de controller (vai falhar)**
+- [x] **Step 1: Escrever o teste de controller (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/clube/web/ClubeControllerTest.java`:
 
@@ -4248,12 +4255,12 @@ class ClubeControllerTest {
 }
 ```
 
-- [ ] **Step 2: Rodar o teste para verificar que falha**
+- [x] **Step 2: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*ClubeControllerTest'`
 Expected: FAIL na compilação — `ClubeController` não existe.
 
-- [ ] **Step 3: Criar o controller**
+- [x] **Step 3: Criar o controller**
 
 `clube/web/ClubeController.java` — a classe é package-private de propósito: o controller é detalhe interno do módulo.
 
@@ -4299,12 +4306,12 @@ class ClubeController {
 }
 ```
 
-- [ ] **Step 4: Rodar o teste para verificar que passa**
+- [x] **Step 4: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*ClubeControllerTest'`
 Expected: PASS nos três testes. Se o terceiro falhar com 401 em vez de 404, a rota não foi liberada no `SecurityConfig` da Task 1 — confira a linha `GET /api/v1/clubes/**`.
 
-- [ ] **Step 5: Compilar e commitar**
+- [x] **Step 5: Compilar e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
@@ -4339,7 +4346,7 @@ Cria o `JogadorService` — que as Tasks 5 a 7 deixaram pendente de propósito, 
 - Consumes: `JogadorRepository`, `JogadorAtributoRepository`, `JogadorVinculoRepository` (Tasks 5–7); `TemporadaService` (Task 2); `ClubeService.buscarPorSlug` (Task 4).
 - Produces: `JogadorService.buscarPorSlug(String slug, String labelTemporada) -> Optional<JogadorDetalhe>` e `JogadorService.listarElenco(String slugClube, String labelTemporada) -> List<JogadorResumo>`.
 
-- [ ] **Step 1: Criar os DTOs**
+- [x] **Step 1: Criar os DTOs**
 
 `jogador/dto/JogadorResumo.java`:
 
@@ -4399,7 +4406,7 @@ public record JogadorDetalhe(
 }
 ```
 
-- [ ] **Step 2: Escrever o teste de controller (vai falhar)**
+- [x] **Step 2: Escrever o teste de controller (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/jogador/web/JogadorControllerTest.java`:
 
@@ -4473,12 +4480,12 @@ class JogadorControllerTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*JogadorControllerTest'`
 Expected: FAIL na compilação — `JogadorService` e `JogadorController` não existem.
 
-- [ ] **Step 4: Criar o mapper**
+- [x] **Step 4: Criar o mapper**
 
 `jogador/mapper/JogadorMapper.java`:
 
@@ -4500,7 +4507,7 @@ public interface JogadorMapper {
 
 `JogadorDetalhe` e `JogadorResumo` são montados à mão no service porque combinam dados de três repositórios — MapStruct não ajuda quando a origem é composta.
 
-- [ ] **Step 5: Criar o serviço público e a implementação**
+- [x] **Step 5: Criar o serviço público e a implementação**
 
 `jogador/JogadorService.java`:
 
@@ -4615,7 +4622,7 @@ class JogadorServiceImpl implements JogadorService {
 
 A lista de características fica vazia neste plano — a associação existe no banco desde a Task 7, e populá-la só faz sentido quando o importador do Plano 3 a preencher. Devolver `List.of()` é honesto; inventar dado não seria.
 
-- [ ] **Step 6: Criar o controller**
+- [x] **Step 6: Criar o controller**
 
 `jogador/web/JogadorController.java`:
 
@@ -4662,7 +4669,7 @@ class JogadorController {
 
 O elenco não é paginado porque um elenco tem limite natural (algumas dezenas de jogadores) e paginar uma lista que nunca cresce só complica o cliente.
 
-- [ ] **Step 7: Rodar o teste e commitar**
+- [x] **Step 7: Rodar o teste e commitar**
 
 Run: `./gradlew test --tests '*JogadorControllerTest'`
 Expected: PASS nos três testes.
@@ -4696,7 +4703,7 @@ git commit -m "feat(jogador): expõe consulta de jogador e elenco em /api/v1/jog
 - Consumes: `CompeticaoService` (Task 8).
 - Produces: `GET /api/v1/competicoes?pais=BRA` e `GET /api/v1/competicoes/{slug}/edicoes/{temporada}`.
 
-- [ ] **Step 1: Escrever o teste de controller (vai falhar)**
+- [x] **Step 1: Escrever o teste de controller (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/competicao/web/CompeticaoControllerTest.java`:
 
@@ -4770,12 +4777,12 @@ class CompeticaoControllerTest {
 }
 ```
 
-- [ ] **Step 2: Rodar o teste para verificar que falha**
+- [x] **Step 2: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*CompeticaoControllerTest'`
 Expected: FAIL na compilação — `CompeticaoController` não existe.
 
-- [ ] **Step 3: Criar o controller**
+- [x] **Step 3: Criar o controller**
 
 `competicao/web/CompeticaoController.java`:
 
@@ -4821,12 +4828,12 @@ class CompeticaoController {
 }
 ```
 
-- [ ] **Step 4: Rodar o teste**
+- [x] **Step 4: Rodar o teste**
 
 Run: `./gradlew test --tests '*CompeticaoControllerTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 5: Registrar a decisão arquitetural**
+- [x] **Step 5: Registrar a decisão arquitetural**
 
 O checklist (`.rules/java-checklist.md`, item 9) exige registrar decisão arquitetural relevante.
 
@@ -4875,14 +4882,14 @@ grep -rL "PostMapping\|PutMapping\|DeleteMapping" src/main/java/br/com/api/footf
 ```
 ```
 
-- [ ] **Step 6: Rodar a suíte completa**
+- [x] **Step 6: Rodar a suíte completa**
 
 Este é o único ponto do plano em que a suíte inteira roda. Exige Docker.
 
 Run: `./gradlew build`
 Expected: BUILD SUCCESSFUL, com todos os testes verdes. Se algum falhar, corrija antes de commitar — não enfraqueça o teste.
 
-- [ ] **Step 7: Percorrer o checklist e commitar**
+- [x] **Step 7: Percorrer o checklist e commitar**
 
 Percorra `.rules/java-checklist.md` inteiro. Itens que merecem atenção específica neste plano:
 
@@ -4913,7 +4920,7 @@ Ao terminar a Task 11, estes fatos devem ser verdadeiros:
 |---|---|
 | Compila | `./gradlew compileJava` |
 | Suíte completa verde | `./gradlew build` |
-| 10 migrations aplicadas, nenhuma editada | `ls src/main/resources/db/migration/` |
+| 11 migrations aplicadas, nenhuma editada | `ls src/main/resources/db/migration/` |
 | Fronteiras de módulo íntegras | `./gradlew test --tests '*ModularidadeTest'` |
 | Catálogo é read-only | nenhum `@PostMapping`/`@PutMapping`/`@DeleteMapping` em `*/web/` |
 

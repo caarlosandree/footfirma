@@ -1,0 +1,32 @@
+package br.com.api.footfirma.shared.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+class TratadorDeErros {
+
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    ProblemDetail naoEncontrado(RecursoNaoEncontradoException excecao) {
+        var problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, excecao.getMessage());
+        problema.setTitle("Recurso não encontrado");
+        return problema;
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    ProblemDetail invalido(MethodArgumentNotValidException excecao) {
+        var problema = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        problema.setTitle("Dados inválidos");
+        problema.setProperty("campos", excecao.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(FieldError::getField,
+                        erro -> erro.getDefaultMessage() == null ? "inválido" : erro.getDefaultMessage(),
+                        (primeiro, segundo) -> primeiro)));
+        return problema;
+    }
+}
