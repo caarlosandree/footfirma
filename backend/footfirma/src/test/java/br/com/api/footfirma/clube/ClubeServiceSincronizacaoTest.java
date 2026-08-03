@@ -115,7 +115,7 @@ class ClubeServiceSincronizacaoTest {
         var estadioId = clubeService.sincronizarEstadio(
                 new DadosDeEstadio("Estádio Sinc Três", "Curitiba", null, 25000, 1980)).id();
         var dados = new DadosDeClube("sinc-zeta", "Zeta Futebol Clube", "Zeta", null,
-                1912, paisId, null, estadioId, "#FF0000", "#FFFFFF", 70, 60, null);
+                1912, paisId, null, estadioId, "#FF0000", "#FFFFFF", 70, 50, 60, null);
 
         clubeService.sincronizarClube(dados);
 
@@ -124,8 +124,20 @@ class ClubeServiceSincronizacaoTest {
         assertThat(gravado).isEqualTo(estadioId);
     }
 
+    @Test
+    void deveGravarForcaFinanceiraDoClube() {
+        var dados = new DadosDeClube("sinc-omega", "Omega Futebol Clube", "Omega", null,
+                1912, paisId, null, null, "#101010", "#FFFFFF", 71, 44, 88, null);
+
+        var resultado = clubeService.sincronizarClube(dados);
+
+        var forca = jdbcTemplate.queryForObject(
+                "select forca_financeira from clube where id = ?", Integer.class, resultado.id());
+        assertThat(forca).isEqualTo(44);
+    }
+
     private DadosDeClube clube(String slug, String nomeCurto, int reputacao) {
         return new DadosDeClube(slug, nomeCurto + " Futebol Clube", nomeCurto, null,
-                1900, paisId, null, null, "#0000FF", "#FFFFFF", reputacao, 60, null);
+                1900, paisId, null, null, "#0000FF", "#FFFFFF", reputacao, 50, 60, null);
     }
 }

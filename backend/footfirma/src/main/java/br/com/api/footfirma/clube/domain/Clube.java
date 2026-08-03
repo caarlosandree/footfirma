@@ -57,6 +57,9 @@ public class Clube {
     @Column(nullable = false)
     private Integer reputacao;
 
+    @Column(name = "forca_financeira", nullable = false)
+    private Integer forcaFinanceira;
+
     @Column(name = "qualidade_base", nullable = false)
     private Integer qualidadeBase;
 
@@ -78,6 +81,7 @@ public class Clube {
         this.nomeCurto = nomeCurto;
         this.paisId = paisId;
         this.reputacao = 50;
+        this.forcaFinanceira = 50;
         this.qualidadeBase = 50;
     }
 

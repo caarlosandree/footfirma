@@ -5,6 +5,6 @@ import java.time.LocalDate;
 
 /** Entrada de ingestão. Espelha uma linha de {@code jogador_vinculo.csv}. */
 public record DadosDeVinculo(Long jogadorId, Long clubeId, Long temporadaId, String tipo,
-                             Integer numeroCamisa, LocalDate dataInicio, LocalDate dataFim,
-                             BigDecimal valorMercadoEur) {
+                             String categoria, Integer numeroCamisa, LocalDate dataInicio,
+                             LocalDate dataFim, BigDecimal valorMercadoEur) {
 }

@@ -3,10 +3,10 @@ package br.com.api.footfirma.shared.dto;
 /**
  * Devolvido por todo método {@code sincronizar*} de módulo de catálogo.
  *
- * <p>O {@code id} volta porque o importador liga as entidades seguintes por chave
- * estrangeira, e o dataset só conhece slug. O {@code criado} volta porque o
- * relatório distingue inserção de atualização — sem isso não há como provar que
- * uma segunda importação do mesmo dataset não criou nada.
+ * <p>O {@code id} volta porque quem sincroniza liga as entidades seguintes por
+ * chave estrangeira, e só conhece slug. O {@code criado} volta porque o relatório
+ * distingue inserção de atualização — sem isso não há como provar que uma segunda
+ * execução sobre o mesmo estado não criou nada.
  */
 public record ResultadoDeSincronizacao(Long id, boolean criado) {
 

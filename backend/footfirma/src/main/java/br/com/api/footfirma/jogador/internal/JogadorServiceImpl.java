@@ -3,6 +3,7 @@ package br.com.api.footfirma.jogador.internal;
 import br.com.api.footfirma.clube.ClubeService;
 import br.com.api.footfirma.jogador.JogadorService;
 import br.com.api.footfirma.jogador.domain.Caracteristica;
+import br.com.api.footfirma.jogador.domain.CategoriaDeElenco;
 import br.com.api.footfirma.jogador.domain.FonteAtributo;
 import br.com.api.footfirma.jogador.domain.Jogador;
 import br.com.api.footfirma.jogador.domain.JogadorAtributo;
@@ -168,7 +169,7 @@ class JogadorServiceImpl implements JogadorService {
                 jogador.getPosicaoPrincipal().getCodigo(),
                 jogador.getOrigem().name(),
                 atributos,
-                // Vazia até o importador do Plano 3 preencher jogador_caracteristica.
+                // Vazia até o gerador de mundo preencher jogador_caracteristica.
                 // Devolver lista vazia é honesto; inventar dado não seria.
                 List.of());
     }
@@ -305,6 +306,7 @@ class JogadorServiceImpl implements JogadorService {
                 jogadorRepository.getReferenceById(dados.jogadorId()),
                 dados.clubeId(), dados.temporadaId(), TipoVinculo.valueOf(dados.tipo())));
         vinculo.setTipo(TipoVinculo.valueOf(dados.tipo()));
+        vinculo.setCategoria(CategoriaDeElenco.valueOf(dados.categoria()));
         vinculo.setNumeroCamisa(dados.numeroCamisa());
         vinculo.setDataInicio(dados.dataInicio());
         vinculo.setDataFim(dados.dataFim());

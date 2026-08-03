@@ -22,7 +22,7 @@ public interface AvaliacaoService {
      * produzem resultado idêntico.
      *
      * <p>Não é exposta por REST — seria um POST no catálogo. Quem a chama é o
-     * importador do Plano 3.
+     * gerador de mundo, no último passo da geração.
      */
     ResultadoMaterializacao materializar(String labelTemporada);
 }

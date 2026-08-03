@@ -14,7 +14,7 @@ public interface TemporadaService {
     List<TemporadaResumo> listarOrdenadas();
 
     /**
-     * Upsert por {@code label}. Chamado apenas pelo importador — a API REST do
+     * Upsert por {@code label}. Chamado apenas pelo gerador de mundo — a API REST do
      * catálogo é read-only por decisão registrada em
      * {@code docs/adr/2026-08-01-catalogo-read-only.md}.
      */

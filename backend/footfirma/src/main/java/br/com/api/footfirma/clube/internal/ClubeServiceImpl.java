@@ -84,6 +84,7 @@ class ClubeServiceImpl implements ClubeService {
         clube.setCorPrimaria(dados.corPrimaria());
         clube.setCorSecundaria(dados.corSecundaria());
         clube.setReputacao(dados.reputacao());
+        clube.setForcaFinanceira(dados.forcaFinanceira());
         clube.setQualidadeBase(dados.qualidadeBase());
         clube.setEstadoBaseId(dados.estadoBaseId());
         if (existente.isPresent()) {

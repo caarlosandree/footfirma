@@ -61,13 +61,13 @@ src/main/java/br/com/api/footfirma/
 
 src/main/resources/
 ├── application.properties
-└── db/migration/ # Flyway: V{n}__descricao.sql (V1…V14 aplicadas)
+└── db/migration/ # Flyway: V{n}__descricao.sql (V1…V16 aplicadas)
 ```
 
 Status: verificado em 2026-08-03.
 
 Sete módulos de domínio existem: `temporada`, `geografia`, `clube`, `jogador`,
-`competicao`, `avaliacao` e `importacao`. **Ao criar o próximo, copie o formato de um
+`competicao`, `avaliacao` e `mundo`. **Ao criar o próximo, copie o formato de um
 deles** — a estrutura já está estabelecida, e partir do zero só produz divergência.
 
 Dois pontos que a leitura do código não entrega de imediato:
@@ -82,29 +82,32 @@ Dois pontos que a leitura do código não entrega de imediato:
 
 A API é read-only por decisão registrada em
 `docs/adr/2026-08-01-catalogo-read-only.md`: nenhum controller aceita `POST`, `PUT`,
-`PATCH` ou `DELETE`. A única escrita vem do módulo `importacao`, que não é endpoint —
-é um `ApplicationRunner` sob o profile `importacao`.
+`PATCH` ou `DELETE`. A única escrita vem do módulo `mundo`, que não é endpoint — é um
+`ApplicationRunner` sob o profile `mundo`.
 
 Em banco zerado o catálogo continua **vazio de clubes e jogadores**, e os endpoints
-respondem lista vazia e 404. Rodar a carga de `fixtures/v1` popula 20 clubes **reais**
-da Série A e 440 jogadores **fictícios** — a divisão é deliberada e está explicada em
-`fixtures/README.md`. Ver também `docs/runbooks/importacao.md`.
+respondem lista vazia e 404. Rodar o gerador popula duas ligas fictícias com 40
+clubes e 1.520 jogadores — **tudo inventado menos a geografia**. Ver
+`docs/runbooks/mundo.md`.
 
-Duas coisas que a leitura de `importacao` não entrega de imediato:
+Três coisas que a leitura de `mundo` não entrega de imediato:
 
 - **Ele orquestra e não escreve em tabela alheia.** Cada módulo de catálogo expõe
-  métodos `sincronizar*`; o importador só os chama. Registrado em
-  `docs/adr/2026-08-03-ingestao-pelos-modulos.md`.
-- **Ocorrência é linha recusada antes do banco; erro de banco aborta a etapa.**
-  Capturar violação de constraint para "continuar" produziria transação
-  *rollback-only* que reporta sucesso e grava nada.
+  métodos `sincronizar*`; o gerador só os chama. A exceção é `LimpezaDoCatalogo`, que
+  apaga por `JdbcTemplate` — justificada em `docs/adr/2026-08-03-mundo-gerado.md`.
+- **`gerar()` não abre transação envolvente, de propósito.**
+  `AvaliacaoService.materializar` é `NOT_SUPPORTED` e suspende a transação corrente:
+  dentro de um commit único ela não veria os atributos recém-gravados e produziria
+  zero overall.
+- **As fábricas são puras** — recebem `SplittableRandom` e devolvem records, sem
+  Spring e sem banco. É o que permite testar balanceamento sem Docker.
 
 ## O que nunca fazer neste repositório
 
 - Criar pacotes técnicos globais (`controllers/`, `services/`, `entities/`) — a
   organização é **package by feature** e o Spring Modulith valida isso
 - Referenciar tipo de subpacote interno de outro módulo
-- Escrever em tabela de outro módulo a partir de `importacao` — a ingestão passa pela
+- Escrever em tabela de outro módulo a partir de `mundo` — a geração passa pela
   interface pública do módulo dono, sempre
 - Expor `@Entity` em controller, DTO ou payload de evento
 - Editar migration já aplicada
