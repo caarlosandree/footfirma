@@ -1,0 +1,4 @@
+slug,nome,iso_pais,tipo,nivel,genero
+serie-ouro,Campeonato Nacional Série Ouro,BRA,LIGA,1,MASCULINO
+serie-prata,Campeonato Nacional Série Prata,BRA,LIGA,2,MASCULINO
+copa-nacional,Copa Nacional,BRA,COPA,,MASCULINO

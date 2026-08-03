@@ -1,0 +1,22 @@
+{
+  "schemaVersao": "1",
+  "datasetVersao": "fixtures-v1",
+  "geradoEm": "2026-08-03",
+  "arquivos": [
+    { "nome": "temporada.csv", "linhas": 2, "sha256": "ee690d7b9ec566c84d6a49370d0fa1d21a6f4368f6e78d2aa7c68fa78ea19fcd" },
+    { "nome": "estadio.csv", "linhas": 8, "sha256": "1f49d666ee8d418a9475e52beffcb28296de8e6e8c38feb028ec820732d1f4c2" },
+    { "nome": "clube.csv", "linhas": 8, "sha256": "5ed70bd60aea68196c063e65a911cd04ed9c4bbb6494cdf16090eccd6419941f" },
+    { "nome": "clube_alias.csv", "linhas": 16, "sha256": "6d0153242e2b649d367397e9df7c2dfd1b7fff553fbeedecb1a49a985c211020" },
+    { "nome": "competicao.csv", "linhas": 3, "sha256": "a5b915c936195490f6aa45dd7371b4e5c64c606aa1ffb18d731bb2034271daf8" },
+    { "nome": "edicao.csv", "linhas": 3, "sha256": "ea4655cb6a43c647acabec1550253eaf3848a05795cb54c04e9a71fa27830047" },
+    { "nome": "fase.csv", "linhas": 5, "sha256": "2802ae959c406b1c4ca3af2eacb69c81ecfb28b12f3d3858c262c015b006aed8" },
+    { "nome": "edicao_participante.csv", "linhas": 24, "sha256": "020def66c974dabe53feb600243484e391ea44d23d6d250a188d92debf45d74a" },
+    { "nome": "regra_classificacao.csv", "linhas": 6, "sha256": "fe603add428177d4acf64026ce4a9029beb54c8a2b885608246dbf4e49b2cc96" },
+    { "nome": "jogador.csv", "linhas": 176, "sha256": "45b51707cca0e2ef8cda1ca82a0407e4cbc166063e177156ba0b4cf3653707cb" },
+    { "nome": "jogador_posicao.csv", "linhas": 152, "sha256": "0b871462f184d37e30dfad558968d86e4b849e11d9a88b070d38087d3a6aae53" },
+    { "nome": "jogador_atributo.csv", "linhas": 352, "sha256": "65dd65a37fda9ab6df25eef15f84025e7976136da3283a256392bd8ab55084e4" },
+    { "nome": "jogador_atributo_oculto.csv", "linhas": 176, "sha256": "b6912e2f85068dfd9e763ed52b2fadbc1e4d2f0e9a3e903631b5f101d6d6db57" },
+    { "nome": "jogador_caracteristica.csv", "linhas": 169, "sha256": "dc7d22d23cff2f6c4f822173c7edb0f4b61749f7922a8cb6a0b122a5e565fd42" },
+    { "nome": "jogador_vinculo.csv", "linhas": 352, "sha256": "19771df38b8a713ca78f0abcb8bfcc0207eaa05cb20f12a65823834efbf4090b" }
+  ]
+}

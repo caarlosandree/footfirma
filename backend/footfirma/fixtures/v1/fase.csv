@@ -1,0 +1,6 @@
+competicao_slug,temporada,ordem,nome,tipo,jogos_por_confronto,tem_gol_fora,tem_prorrogacao,tem_penaltis
+serie-ouro,2025,1,Turno e returno,PONTOS_CORRIDOS,2,false,false,false
+serie-ouro,2026,1,Turno e returno,PONTOS_CORRIDOS,2,false,false,false
+copa-nacional,2026,1,Quartas de final,ELIMINATORIA,2,false,true,true
+copa-nacional,2026,2,Semifinal,ELIMINATORIA,2,false,true,true
+copa-nacional,2026,3,Final,ELIMINATORIA,1,false,true,true
