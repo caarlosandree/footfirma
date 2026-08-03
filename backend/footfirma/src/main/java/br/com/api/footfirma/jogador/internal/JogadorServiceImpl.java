@@ -3,6 +3,8 @@ package br.com.api.footfirma.jogador.internal;
 import br.com.api.footfirma.clube.ClubeService;
 import br.com.api.footfirma.jogador.JogadorService;
 import br.com.api.footfirma.jogador.domain.Jogador;
+import br.com.api.footfirma.jogador.domain.JogadorVinculo;
+import br.com.api.footfirma.jogador.dto.JogadorComAtributos;
 import br.com.api.footfirma.jogador.dto.JogadorDetalhe;
 import br.com.api.footfirma.jogador.dto.JogadorResumo;
 import br.com.api.footfirma.jogador.dto.PosicaoCatalogo;
@@ -14,13 +16,18 @@ import br.com.api.footfirma.jogador.repository.PosicaoRepository;
 import br.com.api.footfirma.temporada.TemporadaService;
 import br.com.api.footfirma.temporada.dto.TemporadaResumo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -72,6 +79,50 @@ class JogadorServiceImpl implements JogadorService {
                         posicao.getNome(),
                         posicao.getSetor().name()))
                 .toList();
+    }
+
+    @Override
+    public Page<JogadorComAtributos> listarAtributosPorTemporada(String labelTemporada, Pageable pageable) {
+        var temporadaId = temporadaService.buscarPorLabel(labelTemporada).map(TemporadaResumo::id);
+        if (temporadaId.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        // getJogador().getId() lê o id do proxy LAZY sem disparar select: não há N+1 aqui.
+        return jogadorAtributoRepository.findByTemporadaId(temporadaId.get(), pageable)
+                .map(atributo -> new JogadorComAtributos(
+                        atributo.getJogador().getId(),
+                        jogadorMapper.paraAtributos(atributo)));
+    }
+
+    @Override
+    public List<JogadorResumo> listarResumosPorIds(Collection<Long> ids, String labelTemporada) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        var temporadaId = temporadaService.buscarPorLabel(labelTemporada).map(TemporadaResumo::id);
+        // Duas consultas para a página inteira, nunca uma por jogador.
+        var camisas = temporadaId
+                .map(id -> jogadorVinculoRepository.buscarPorJogadoresETemporada(ids, id).stream()
+                        .filter(vinculo -> vinculo.getNumeroCamisa() != null)
+                        .collect(Collectors.toMap(
+                                vinculo -> vinculo.getJogador().getId(),
+                                JogadorVinculo::getNumeroCamisa,
+                                (primeiro, segundo) -> primeiro)))
+                .orElseGet(Map::of);
+        return jogadorRepository.buscarPorIds(ids).stream()
+                .map(jogador -> new JogadorResumo(
+                        jogador.getId(),
+                        jogador.getSlug(),
+                        jogador.getNomeExibicao(),
+                        idadeEm(jogador.getDataNascimento()),
+                        jogador.getPosicaoPrincipal().getCodigo(),
+                        camisas.get(jogador.getId())))
+                .toList();
+    }
+
+    @Override
+    public Optional<Long> buscarIdPorSlug(String slug) {
+        return jogadorRepository.findBySlug(slug).map(Jogador::getId);
     }
 
     private JogadorDetalhe montarDetalhe(Jogador jogador, Long temporadaId) {
