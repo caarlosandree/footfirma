@@ -33,4 +33,9 @@ class GeografiaServiceImpl implements GeografiaService {
                 .map(geografiaMapper::paraResumo)
                 .toList();
     }
+
+    @Override
+    public Optional<EstadoResumo> buscarEstadoPorUf(String isoPais, String uf) {
+        return estadoRepository.buscarPorIsoEUf(isoPais, uf).map(geografiaMapper::paraResumo);
+    }
 }

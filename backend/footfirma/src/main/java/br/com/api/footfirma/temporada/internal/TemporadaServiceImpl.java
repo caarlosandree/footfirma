@@ -1,6 +1,9 @@
 package br.com.api.footfirma.temporada.internal;
 
+import br.com.api.footfirma.shared.dto.ResultadoDeSincronizacao;
 import br.com.api.footfirma.temporada.TemporadaService;
+import br.com.api.footfirma.temporada.domain.Temporada;
+import br.com.api.footfirma.temporada.dto.DadosDeTemporada;
 import br.com.api.footfirma.temporada.dto.TemporadaResumo;
 import br.com.api.footfirma.temporada.mapper.TemporadaMapper;
 import br.com.api.footfirma.temporada.repository.TemporadaRepository;
@@ -29,5 +32,20 @@ class TemporadaServiceImpl implements TemporadaService {
         return temporadaRepository.findAllByOrderByAnoInicioDesc().stream()
                 .map(temporadaMapper::paraResumo)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public ResultadoDeSincronizacao sincronizar(DadosDeTemporada dados) {
+        var existente = temporadaRepository.findByLabel(dados.label());
+        if (existente.isPresent()) {
+            var temporada = existente.get();
+            temporada.setAnoInicio(dados.anoInicio());
+            temporada.setAnoFim(dados.anoFim());
+            return ResultadoDeSincronizacao.atualizado(temporada.getId());
+        }
+        var nova = temporadaRepository.save(
+                new Temporada(dados.label(), dados.anoInicio(), dados.anoFim()));
+        return ResultadoDeSincronizacao.criado(nova.getId());
     }
 }
