@@ -1,9 +1,13 @@
 package br.com.api.footfirma.mundo.internal;
 
+import br.com.api.footfirma.clube.ClubeService;
+import br.com.api.footfirma.clube.dto.DadosDeClube;
+import br.com.api.footfirma.clube.dto.DadosDeEstadio;
 import br.com.api.footfirma.competicao.CompeticaoService;
 import br.com.api.footfirma.competicao.dto.DadosDeCompeticao;
 import br.com.api.footfirma.competicao.dto.DadosDeEdicao;
 import br.com.api.footfirma.competicao.dto.DadosDeFase;
+import br.com.api.footfirma.competicao.dto.DadosDeParticipante;
 import br.com.api.footfirma.competicao.dto.DadosDeRegra;
 import br.com.api.footfirma.geografia.GeografiaService;
 import br.com.api.footfirma.mundo.MundoService;
@@ -19,8 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SplittableRandom;
 
 @Service
 @EnableConfigurationProperties(PropriedadesDeMundo.class)
@@ -32,6 +38,7 @@ class MundoServiceImpl implements MundoService {
 
     private final TemporadaService temporadaService;
     private final CompeticaoService competicaoService;
+    private final ClubeService clubeService;
     private final GeografiaService geografiaService;
     private final PropriedadesDeMundo propriedades;
     private final JdbcTemplate jdbcTemplate;
@@ -48,7 +55,10 @@ class MundoServiceImpl implements MundoService {
                         "País BRA ausente — seed de geografia não aplicado"))
                 .id();
         var temporadaId = criarTemporada(contagens);
-        criarLigas(paisId, temporadaId, contagens);
+        var edicaoPorDivisao = criarLigas(paisId, temporadaId, contagens);
+        var idsPorSlug = new HashMap<String, Long>();
+        var clubes = criarClubes(paisId, idsPorSlug, contagens);
+        vincularParticipantes(clubes, idsPorSlug, edicaoPorDivisao, contagens);
         return new RelatorioDeMundo(propriedades.semente(), TEMPORADA, List.copyOf(contagens));
     }
 
@@ -88,6 +98,42 @@ class MundoServiceImpl implements MundoService {
         competicaoService.sincronizarFase(new DadosDeFase(edicaoId, 1, "Turno e returno",
                 "PONTOS_CORRIDOS", 2, false, false, false));
         return new LigaCriada(competicaoId, edicaoId);
+    }
+
+    private List<ClubeGerado> criarClubes(Long paisId, Map<String, Long> idsPorSlug,
+                                          List<ContagemPorEntidade> contagens) {
+        var clubes = FabricaDeClubes.gerar(new SplittableRandom(propriedades.semente()));
+        var criados = 0;
+        for (var clube : clubes) {
+            var estadoId = geografiaService.buscarEstadoPorUf(ISO_PAIS, clube.uf())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "UF %s ausente no seed de geografia".formatted(clube.uf())))
+                    .id();
+            var estadioId = clubeService.sincronizarEstadio(new DadosDeEstadio(
+                    clube.estadio(), clube.cidade(), estadoId,
+                    clube.capacidade(), clube.anoInauguracao())).id();
+            var resultado = clubeService.sincronizarClube(new DadosDeClube(
+                    clube.slug(), clube.nomeOficial(), clube.nomeCurto(), clube.apelido(),
+                    clube.anoFundacao(), paisId, estadoId, estadioId,
+                    clube.corPrimaria(), clube.corSecundaria(),
+                    clube.reputacao(), clube.forcaFinanceira(), clube.qualidadeBase(), estadoId));
+            if (resultado.criado()) {
+                criados++;
+            }
+            idsPorSlug.put(clube.slug(), resultado.id());
+        }
+        contagens.add(new ContagemPorEntidade("clube", criados, clubes.size() - criados));
+        return clubes;
+    }
+
+    private void vincularParticipantes(List<ClubeGerado> clubes, Map<String, Long> idsPorSlug,
+                                       Map<Integer, Long> edicaoPorDivisao,
+                                       List<ContagemPorEntidade> contagens) {
+        // posicao_final fica nula: nenhuma temporada foi disputada, e classificação
+        // inventada seria afirmar resultado que não aconteceu.
+        clubes.forEach(clube -> competicaoService.sincronizarParticipante(new DadosDeParticipante(
+                edicaoPorDivisao.get(clube.divisao()), idsPorSlug.get(clube.slug()), null)));
+        contagens.add(new ContagemPorEntidade("edicao_participante", clubes.size(), 0));
     }
 
     record LigaCriada(Long competicaoId, Long edicaoId) {
