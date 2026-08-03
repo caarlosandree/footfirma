@@ -65,6 +65,18 @@ final class ConstantesDeTreinador {
     static final double AMORTECIMENTO_POR_LIDERANCA = 0.06;
     static final double CUSTO_POR_DEGRAU_DE_STATUS = 3.0;
 
+    /** Ao cruzar este piso para baixo, o módulo publica {@code JogadorInsatisfeito}. */
+    static final double MORAL_JOGADOR_INSATISFEITO = 25.0;
+
+    // --- Skills ---
+
+    /**
+     * Piso da escala. Vale como padrão quando o treinador ainda não tem a linha da skill
+     * na temporada: ninguém é pior que 1, e assumir 0 daria ao motor um valor que a
+     * distribuição jamais produz.
+     */
+    static final int SKILL_MINIMA = 1;
+
     static double clamp(double valor, double minimo, double maximo) {
         return Math.max(minimo, Math.min(maximo, valor));
     }

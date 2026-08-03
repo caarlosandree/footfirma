@@ -13,7 +13,7 @@ import java.util.Map;
  * Massa de teste do módulo. Cada método devolve um objeto válido por padrão; o teste
  * sobrescreve apenas o que quer destacar.
  */
-final class TreinadorFactory {
+public final class TreinadorFactory {
 
     private static final LocalDate NASCIMENTO = LocalDate.of(1980, 1, 1);
     private static final LocalDate INICIO_DA_TEMPORADA = LocalDate.of(2026, 1, 1);
@@ -21,34 +21,34 @@ final class TreinadorFactory {
     private TreinadorFactory() {
     }
 
-    static Treinador humano(String slug, Long paisId) {
+    public static Treinador humano(String slug, Long paisId) {
         return new Treinador(slug, "Treinador " + slug, slug, NASCIMENTO,
                 paisId, TipoTreinador.HUMANO, (long) slug.hashCode());
     }
 
-    static Treinador ia(String slug, Long paisId) {
+    public static Treinador ia(String slug, Long paisId) {
         return new Treinador(slug, "Treinador " + slug, slug, NASCIMENTO,
                 paisId, TipoTreinador.IA, (long) slug.hashCode());
     }
 
-    static Treinador comReputacao(String slug, Long paisId, int reputacao) {
+    public static Treinador comReputacao(String slug, Long paisId, int reputacao) {
         var treinador = humano(slug, paisId);
         treinador.setReputacao(reputacao);
         return treinador;
     }
 
-    static VinculoTreinador vinculoAtivo(Treinador treinador, Long clubeId, Long temporadaId) {
+    public static VinculoTreinador vinculoAtivo(Treinador treinador, Long clubeId, Long temporadaId) {
         return new VinculoTreinador(treinador, clubeId, temporadaId, INICIO_DA_TEMPORADA, 50.0, 10);
     }
 
-    static VinculoTreinador vinculoComMoral(Treinador treinador, Long clubeId,
+    public static VinculoTreinador vinculoComMoral(Treinador treinador, Long clubeId,
                                             Long temporadaId, double moral, int metaPosicao) {
         return new VinculoTreinador(treinador, clubeId, temporadaId,
                 INICIO_DA_TEMPORADA, moral, metaPosicao);
     }
 
     /** Distribuição válida de 20 pontos: generalista 4·4·3·3·3·3. */
-    static Map<Skill, Integer> distribuicaoValida() {
+    public static Map<Skill, Integer> distribuicaoValida() {
         var distribuicao = new EnumMap<Skill, Integer>(Skill.class);
         distribuicao.put(Skill.VISAO_DE_JOGO, 4);
         distribuicao.put(Skill.PRELECAO, 4);
@@ -60,7 +60,7 @@ final class TreinadorFactory {
     }
 
     /** Distribuição válida com uma skill escolhida no teto e o resto no mínimo. */
-    static Map<Skill, Integer> especialistaEm(Skill destaque) {
+    public static Map<Skill, Integer> especialistaEm(Skill destaque) {
         var distribuicao = new EnumMap<Skill, Integer>(Skill.class);
         for (var skill : Skill.values()) {
             distribuicao.put(skill, 1);
