@@ -190,19 +190,20 @@ Status: verificado em 2026-08-03.
 **Os dois lados estão em estágios muito diferentes.**
 
 O **backend** saiu do scaffold. Tem sete módulos de domínio (`temporada`, `geografia`,
-`clube`, `jogador`, `competicao`, `avaliacao`, `importacao`), mais `config` e `shared`
-como módulos abertos, catorze migrations Flyway e uma suíte de 157 testes. A API é
-read-only em `/api/v1/clubes`, `/jogadores`, `/competicoes`,
+`clube`, `jogador`, `competicao`, `avaliacao`, `mundo`), mais `config` e `shared`
+como módulos abertos, dezesseis migrations Flyway e uma suíte de 144 testes em 33
+classes. A API é read-only em `/api/v1/clubes`, `/jogadores`, `/competicoes`,
 `/jogadores/{slug}/overall` e `/rankings`. Aqui já existem exemplos prontos: ao criar
 um módulo novo, copie o formato de um existente em vez de partir do zero.
 
 O banco tem o schema completo e os seeds de país, estado, posição, característica e
 perfis de peso. Em base zerada continua **vazio de clubes e jogadores** — os endpoints
-respondem lista vazia e 404, e isso é esperado. Rodar a carga de
-`backend/footfirma/fixtures/v1` popula 20 clubes **reais** da Série A, 440 jogadores
-**fictícios** e 7.920 linhas de overall. Clube e competição são dados públicos;
-jogador é gerado proceduralmente, porque atribuir habilidade a pessoa real exigiria
-fonte licenciada. Ver `backend/footfirma/docs/runbooks/importacao.md`.
+respondem lista vazia e 404, e isso é esperado. Rodar o gerador sob o profile `mundo`
+popula duas ligas nacionais fictícias com 40 clubes, 1.520 jogadores e 13.680 linhas
+de overall. **Nada aqui é real além da geografia**: clubes, estádios e jogadores são
+inventados; cidade e UF saem do seed. O mundo é balanceado por seis arquétipos de
+clube, de modo que time pobre tenha base forte e gigante endividado decaia. Ver
+`backend/footfirma/docs/runbooks/mundo.md`.
 
 O **frontend** continua em scaffold: layout raiz, página inicial, `theme-provider` e o
 `Button` do design system. Ali as regras ainda guiam a construção em vez de descrever
@@ -210,8 +211,13 @@ o que existe.
 
 Roadmap do backend, para situar uma tarefa nova: o subsistema de catálogo foi fatiado
 em três planos. Plano 1 (schema e API read-only) e Plano 2 (avaliação e overall) estão
-executados. O Plano 3 está **parcialmente** executado: o formato do dataset, as
-fixtures fictícias e o importador Java foram entregues; o pipeline de dados em Python
-— extração de fonte externa e matching entre fontes — **não**, e é o próximo passo se
-o projeto quiser dados reais. A progressão de jogadores tem spec próprio ainda não
-escrito. Ver `docs/superpowers/specs/` e `docs/superpowers/plans/`.
+executados. O Plano 3 — dataset, importador de CSV e pipeline Python de dados reais —
+foi **abandonado e removido**: o mundo passou a ser gerado proceduralmente, e o
+importador existia para desconfiar de dado externo que não existe mais. Ver
+`docs/superpowers/specs/2026-08-03-mundo-ficticio-design.md`.
+
+A progressão de jogadores entre temporadas tem spec próprio ainda não escrito, e é o
+próximo passo natural: hoje o mundo tem uma temporada só (2026), e o versionamento
+por temporada que o schema suporta não é exercitado. Competição continental e copa
+também ficaram fora desta versão. Ver `docs/superpowers/specs/` e
+`docs/superpowers/plans/`.
