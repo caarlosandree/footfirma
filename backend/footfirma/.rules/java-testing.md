@@ -36,6 +36,20 @@ Este projeto usa os starters granulares, já declarados no `build.gradle`:
 `-security-test`, `-validation-test`, `-actuator-test`, `-flyway-test`.
 Não adicione `spring-boot-starter-test`.
 
+### Os pacotes das anotações mudaram
+
+Snippet de Boot 3 não compila aqui. Os caminhos corretos são:
+
+| Anotação | Pacote no Boot 4 |
+|---|---|
+| `@DataJpaTest` | `org.springframework.boot.data.jpa.test.autoconfigure` |
+| `@AutoConfigureTestDatabase` | `org.springframework.boot.jdbc.test.autoconfigure` |
+| `@WebMvcTest` | `org.springframework.boot.webmvc.test.autoconfigure` |
+| `@MockitoBean` | `org.springframework.test.context.bean.override.mockito` (inalterado) |
+
+O antigo `org.springframework.boot.test.autoconfigure.orm.jpa` / `.web.servlet`
+não existe mais. Na dúvida, confira no jar em vez de confiar na memória.
+
 ## Pirâmide
 
 | Tipo | Alvo | Anotação | Custo |
@@ -143,6 +157,11 @@ class PartidaControllerTest {
 - `@MockitoBean` (não `@MockBean`, removido).
 - `@WebMvcTest` carrega o Spring Security: teste autenticado usa `@WithMockUser` ou
   `SecurityMockMvcRequestPostProcessors`. Não desabilite a segurança para o teste passar.
+- `@WebMvcTest` **não** varre `@Configuration`, então o `SecurityConfig` do módulo
+  `config` fica de fora e vale o default do Spring Security — toda rota exige
+  autenticação e uma rota pública responde 401. Acrescente
+  `@Import(SecurityConfig.class)` para exercitar as regras reais. Importar a
+  configuração de produção é o caminho certo; afrouxar a segurança do teste, não.
 
 ## Teste de eventos entre módulos
 
