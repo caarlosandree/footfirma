@@ -189,8 +189,8 @@ create table vinculo_treinador (
     fim          date,
     motivo_fim   text    check (motivo_fim in ('DEMISSAO', 'PEDIDO_DEMISSAO',
                                                'FIM_DE_CONTRATO', 'ACEITOU_PROPOSTA')),
-    moral        integer not null check (moral between 0 and 99),
-    meta_posicao integer not null check (meta_posicao > 0),
+    moral        numeric(4,2) not null check (moral between 0 and 99),
+    meta_posicao integer      not null check (meta_posicao > 0),
     criado_em    timestamptz not null default now()
 );
 
@@ -236,8 +236,8 @@ create table treinador_jogador (
     status_confianca     text    not null default 'ROTACAO'
                          check (status_confianca in ('INDISCUTIVEL', 'IMPORTANTE', 'ROTACAO',
                                                      'PROMESSA', 'FORA_DOS_PLANOS')),
-    moral                integer not null check (moral between 0 and 99),
-    minutos_acumulados   integer not null default 0 check (minutos_acumulados >= 0),
+    moral                numeric(4,2) not null check (moral between 0 and 99),
+    minutos_acumulados   integer      not null default 0 check (minutos_acumulados >= 0),
     atualizado_em        timestamptz,
     constraint uq_treinador_jogador unique (vinculo_treinador_id, jogador_id)
 );
@@ -246,8 +246,8 @@ create table treinador_jogador (
 create table treinador_jogador_afinidade (
     treinador_id  bigint  not null references treinador (id),
     jogador_id    bigint  not null references jogador (id),
-    afinidade     integer not null default 50 check (afinidade between 0 and 99),
-    jogos_juntos  integer not null default 0 check (jogos_juntos >= 0),
+    afinidade     numeric(4,2) not null default 50 check (afinidade between 0 and 99),
+    jogos_juntos  integer      not null default 0 check (jogos_juntos >= 0),
     atualizado_em timestamptz,
     primary key (treinador_id, jogador_id)
 );
@@ -255,6 +255,12 @@ create table treinador_jogador_afinidade (
 comment on column treinador_jogador_afinidade.jogos_juntos is
     'Peso da consolidação: passagem de 3 jogos mexe pouco na afinidade, de 3 temporadas mexe muito';
 ```
+
+**Moral e afinidade são `numeric(4,2)`, não `integer`.** Os deltas por partida são
+fracionários (+5,9 · +0,8 · −3,2) e uma campanha tem 38 deles. Arredondar a cada
+aplicação acumularia erro na ordem de dezenas de pontos ao longo da temporada, e a
+diferença entre `+0,8` e `+1` decidiria demissões. Em Java os motores trabalham com
+`double`; a coluna guarda duas casas.
 
 **Uma invariante não cabe no banco.** A soma das seis skills de um treinador numa
 temporada precisa bater com `20 + pontos ganhos`. É agregado, e `check` não enxerga
