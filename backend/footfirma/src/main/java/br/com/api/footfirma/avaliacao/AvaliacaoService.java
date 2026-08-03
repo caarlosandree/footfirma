@@ -1,8 +1,20 @@
 package br.com.api.footfirma.avaliacao;
 
+import br.com.api.footfirma.avaliacao.dto.AvaliacoesDoJogador;
+import br.com.api.footfirma.avaliacao.dto.ItemDeRanking;
 import br.com.api.footfirma.avaliacao.dto.ResultadoMaterializacao;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.Optional;
 
 public interface AvaliacaoService {
+
+    Optional<AvaliacoesDoJogador> buscarPorSlug(String slug, String labelTemporada);
+
+    /** {@code overallMinimo} nulo significa sem piso. */
+    Page<ItemDeRanking> ranquear(String labelTemporada, String codigoPosicao,
+                                 Integer overallMinimo, Pageable pageable);
 
     /**
      * Recalcula e grava o overall de todos os jogadores com atributos na temporada,
