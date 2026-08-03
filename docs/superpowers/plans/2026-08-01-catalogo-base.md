@@ -94,7 +94,7 @@ Prepara o terreno: declara os módulos abertos existentes, torna a configuraçã
 **Interfaces:**
 - Produces: `RecursoNaoEncontradoException(String mensagem)` — exceção lançada por todo service quando um slug não existe. `TestcontainersConfiguration` público, importável por qualquer teste via `@Import`.
 
-- [ ] **Step 1: Declarar os módulos abertos e tornar Testcontainers reutilizável**
+- [x] **Step 1: Declarar os módulos abertos e tornar Testcontainers reutilizável**
 
 `config/package-info.java`:
 
@@ -123,7 +123,7 @@ Em `TestcontainersConfiguration.java`, troque a declaração da classe de packag
 public class TestcontainersConfiguration {
 ```
 
-- [ ] **Step 2: Escrever o teste de modularidade**
+- [x] **Step 2: Escrever o teste de modularidade**
 
 `src/test/java/br/com/api/footfirma/ModularidadeTest.java`:
 
@@ -150,12 +150,12 @@ class ModularidadeTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para confirmar que passa**
+- [x] **Step 3: Rodar o teste para confirmar que passa**
 
 Run: `./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS — só existem `config` e `shared`, ambos abertos, sem violação possível ainda. Este teste é a rede que protegerá as tarefas seguintes.
 
-- [ ] **Step 4: Criar a exceção de recurso ausente e o tratador de erros**
+- [x] **Step 4: Criar a exceção de recurso ausente e o tratador de erros**
 
 `shared/exception/RecursoNaoEncontradoException.java`:
 
@@ -207,7 +207,7 @@ class TratadorDeErros {
 }
 ```
 
-- [ ] **Step 5: Configurar a segurança**
+- [x] **Step 5: Configurar a segurança**
 
 O catálogo é dado público de futebol, sem informação pessoal de usuário do sistema. As rotas de leitura são liberadas **uma a uma**, deliberadamente — nunca `anyRequest().permitAll()`.
 
@@ -245,7 +245,7 @@ public class SecurityConfig {
 
 `csrf().disable()` é válido porque a API é stateless e não autentica por cookie. Se isso mudar, CSRF volta a ser obrigatório.
 
-- [ ] **Step 6: Configurar Flyway e validação de schema**
+- [x] **Step 6: Configurar Flyway e validação de schema**
 
 Acrescente ao final de `src/main/resources/application.properties`:
 
@@ -260,7 +260,7 @@ spring.threads.virtual.enabled=true
 
 `open-in-view=false` impede que associações LAZY sejam carregadas na serialização da resposta, que é a origem mais comum de N+1 silencioso.
 
-- [ ] **Step 7: Compilar e rodar os testes existentes**
+- [x] **Step 7: Compilar e rodar os testes existentes**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*FootfirmaApplicationTests'`
 Expected: PASS nos dois — a `V1__cria_event_publication.sql` é o que sustenta o
@@ -268,7 +268,7 @@ Expected: PASS nos dois — a `V1__cria_event_publication.sql` é o que sustenta
 `missing table [event_publication]`: o `spring-modulith-starter-jpa` mapeia a entidade
 `DefaultJpaEventPublication` para essa tabela e ela precisa existir desde o começo.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/main/java/br/com/api/footfirma/config src/main/java/br/com/api/footfirma/shared \
@@ -306,7 +306,7 @@ Menor módulo do sistema e o primeiro a ser criado porque `jogador` e `competica
 **Interfaces:**
 - Produces: `TemporadaService.buscarPorLabel(String label) -> Optional<TemporadaResumo>` e `TemporadaService.listarOrdenadas() -> List<TemporadaResumo>`. `TemporadaResumo(Long id, String label, int anoInicio, int anoFim)`. Os módulos `jogador` e `competicao` consomem `TemporadaService`; suas entidades referenciam a tabela `temporada` por FK, mas **nunca** importam a classe `Temporada`.
 
-- [ ] **Step 1: Escrever a migration**
+- [x] **Step 1: Escrever a migration**
 
 `src/main/resources/db/migration/V2__cria_temporada.sql`:
 
@@ -325,7 +325,7 @@ create table temporada (
 comment on column temporada.label is 'Rótulo exibível: "2025" para temporada de ano civil, "2025/26" para temporada europeia';
 ```
 
-- [ ] **Step 2: Escrever o teste de repositório (vai falhar)**
+- [x] **Step 2: Escrever o teste de repositório (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/temporada/TemporadaRepositoryTest.java`:
 
@@ -383,12 +383,12 @@ class TemporadaRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*TemporadaRepositoryTest'`
 Expected: FAIL na compilação — `Temporada` e `TemporadaRepository` não existem.
 
-- [ ] **Step 4: Criar a entidade e o repositório**
+- [x] **Step 4: Criar a entidade e o repositório**
 
 `temporada/package-info.java`:
 
@@ -481,12 +481,12 @@ public interface TemporadaRepository extends JpaRepository<Temporada, Long> {
 }
 ```
 
-- [ ] **Step 5: Rodar o teste para verificar que passa**
+- [x] **Step 5: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*TemporadaRepositoryTest'`
 Expected: PASS nos dois testes. Se falhar com erro de validação de schema, compare os nomes de coluna da entidade com a migration — `ddl-auto=validate` está ativo justamente para pegar isso.
 
-- [ ] **Step 6: Criar o DTO, o mapper e o serviço público**
+- [x] **Step 6: Criar o DTO, o mapper e o serviço público**
 
 `temporada/dto/TemporadaResumo.java`:
 
@@ -569,12 +569,12 @@ class TemporadaServiceImpl implements TemporadaService {
 }
 ```
 
-- [ ] **Step 7: Compilar e rodar modularidade**
+- [x] **Step 7: Compilar e rodar modularidade**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*TemporadaRepositoryTest'`
 Expected: PASS. Se o MapStruct reclamar de campo não mapeado, é o `unmappedTargetPolicy=ERROR` — todo campo do `TemporadaResumo` precisa de origem no `Temporada`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/main/resources/db/migration/V2__cria_temporada.sql \
@@ -615,7 +615,7 @@ País e unidade federativa. Referenciado por `clube` e `jogador`. Inclui seed do
 **Interfaces:**
 - Produces: `GeografiaService.buscarPaisPorIso(String iso) -> Optional<PaisResumo>`, `GeografiaService.listarEstadosDoPais(String iso) -> List<EstadoResumo>`. `PaisResumo(Long id, String isoCode, String nome, String confederacao)`, `EstadoResumo(Long id, String uf, String nome)`.
 
-- [ ] **Step 1: Escrever as migrations**
+- [x] **Step 1: Escrever as migrations**
 
 `src/main/resources/db/migration/V3__cria_geografia.sql`:
 
@@ -661,7 +661,7 @@ from pais p,
 where p.iso_code = 'BRA';
 ```
 
-- [ ] **Step 2: Escrever o teste (vai falhar)**
+- [x] **Step 2: Escrever o teste (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/geografia/GeografiaRepositoryTest.java`:
 
@@ -710,12 +710,12 @@ class GeografiaRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*GeografiaRepositoryTest'`
 Expected: FAIL na compilação — as classes de `geografia` não existem.
 
-- [ ] **Step 4: Criar o enum, as entidades e os repositórios**
+- [x] **Step 4: Criar o enum, as entidades e os repositórios**
 
 `geografia/package-info.java`:
 
@@ -904,12 +904,12 @@ public interface EstadoRepository extends JpaRepository<Estado, Long> {
 }
 ```
 
-- [ ] **Step 5: Rodar o teste para verificar que passa**
+- [x] **Step 5: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*GeografiaRepositoryTest'`
 Expected: PASS. Os 27 estados vêm da migration de seed, não do teste — se vier 0, a `V4` não rodou; confira o log do Flyway na saída.
 
-- [ ] **Step 6: Criar DTOs, mapper e serviço público**
+- [x] **Step 6: Criar DTOs, mapper e serviço público**
 
 `geografia/dto/PaisResumo.java`:
 
@@ -1011,12 +1011,12 @@ class GeografiaServiceImpl implements GeografiaService {
 }
 ```
 
-- [ ] **Step 7: Compilar e verificar modularidade**
+- [x] **Step 7: Compilar e verificar modularidade**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*GeografiaRepositoryTest'`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/main/resources/db/migration/V3__cria_geografia.sql \
@@ -1061,7 +1061,7 @@ Clube, estádio, aliases de nome e referência externa. Os aliases resolvem "Atl
 
 **Decisão de modelagem:** as FKs para `pais` e `estado` são colunas `Long` (`paisId`, `estadoId`), não `@ManyToOne`. Um `@ManyToOne` para `Pais` obrigaria o módulo `clube` a importar `geografia.domain.Pais`, o que o `ModularidadeTest` reprova. Quando `clube` precisar do nome do estado, pede ao `GeografiaService`.
 
-- [ ] **Step 1: Escrever a migration**
+- [x] **Step 1: Escrever a migration**
 
 `src/main/resources/db/migration/V5__cria_clube.sql`:
 
@@ -1125,7 +1125,7 @@ create table clube_referencia_externa (
 create index idx_clube_referencia_externa_clube on clube_referencia_externa (clube_id);
 ```
 
-- [ ] **Step 2: Escrever a factory de teste**
+- [x] **Step 2: Escrever a factory de teste**
 
 Massa de teste repetida vira factory, conforme `.rules/java-testing.md`.
 
@@ -1151,7 +1151,7 @@ final class ClubeFactory {
 }
 ```
 
-- [ ] **Step 3: Escrever o teste de repositório (vai falhar)**
+- [x] **Step 3: Escrever o teste de repositório (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/clube/ClubeRepositoryTest.java`:
 
@@ -1225,12 +1225,12 @@ class ClubeRepositoryTest {
 }
 ```
 
-- [ ] **Step 4: Rodar o teste para verificar que falha**
+- [x] **Step 4: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*ClubeRepositoryTest'`
 Expected: FAIL na compilação — as classes de `clube` não existem.
 
-- [ ] **Step 5: Criar enum, entidades e repositórios**
+- [x] **Step 5: Criar enum, entidades e repositórios**
 
 `clube/package-info.java`:
 
@@ -1543,12 +1543,12 @@ public interface ClubeAliasRepository extends JpaRepository<ClubeAlias, Long> {
 }
 ```
 
-- [ ] **Step 6: Rodar o teste para verificar que passa**
+- [x] **Step 6: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*ClubeRepositoryTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 7: Criar DTOs, mapper e serviço público**
+- [x] **Step 7: Criar DTOs, mapper e serviço público**
 
 `clube/dto/ClubeResumo.java`:
 
@@ -1669,12 +1669,12 @@ class ClubeServiceImpl implements ClubeService {
 }
 ```
 
-- [ ] **Step 8: Compilar e verificar modularidade**
+- [x] **Step 8: Compilar e verificar modularidade**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*ClubeRepositoryTest'`
 Expected: PASS. Se `ModularidadeTest` acusar dependência de `clube` para `geografia.domain`, você usou `@ManyToOne` para `Pais` ou `Estado` — troque por coluna `Long`, conforme a decisão de modelagem desta tarefa.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/main/resources/db/migration/V5__cria_clube.sql \
@@ -1714,7 +1714,7 @@ Primeira das três tarefas do módulo maior do sistema. Cria as posições (seed
 - Consumes: tabela `pais` (FK `Long`), tabela `clube` (usada só na Task 7).
 - Produces: entidade `Jogador` com `chaveNatural` — string única calculada pelo pipeline como `normalizar(nome_completo)|data_nascimento|iso_pais`. É a chave de idempotência do importador no Plano 3. Enum `Posicao.codigo` com os 9 valores `GOL, ZAG, LTD, LTE, VOL, MEC, MEA, PTA, ATA`.
 
-- [ ] **Step 1: Escrever as migrations**
+- [x] **Step 1: Escrever as migrations**
 
 `src/main/resources/db/migration/V6__cria_jogador.sql`:
 
@@ -1791,7 +1791,7 @@ insert into posicao (codigo, nome, setor, ordem) values
     ('ATA', 'Atacante',          'ATAQUE',  9);
 ```
 
-- [ ] **Step 2: Escrever a factory de teste**
+- [x] **Step 2: Escrever a factory de teste**
 
 `src/test/java/br/com/api/footfirma/jogador/JogadorFactory.java`:
 
@@ -1827,7 +1827,7 @@ final class JogadorFactory {
 }
 ```
 
-- [ ] **Step 3: Escrever o teste de repositório (vai falhar)**
+- [x] **Step 3: Escrever o teste de repositório (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/jogador/JogadorRepositoryTest.java`:
 
@@ -1911,12 +1911,12 @@ class JogadorRepositoryTest {
 
 O terceiro teste é o que prova que a reimportação do Plano 3 não pode duplicar jogador.
 
-- [ ] **Step 4: Rodar o teste para verificar que falha**
+- [x] **Step 4: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*JogadorRepositoryTest'`
 Expected: FAIL na compilação — as classes de `jogador` não existem.
 
-- [ ] **Step 5: Criar enums e a entidade Posicao**
+- [x] **Step 5: Criar enums e a entidade Posicao**
 
 `jogador/package-info.java`:
 
@@ -2015,7 +2015,7 @@ public class Posicao {
 }
 ```
 
-- [ ] **Step 6: Criar a entidade Jogador e os repositórios**
+- [x] **Step 6: Criar a entidade Jogador e os repositórios**
 
 `jogador/domain/Jogador.java`:
 
@@ -2248,12 +2248,12 @@ public interface JogadorRepository extends JpaRepository<Jogador, Long> {
 }
 ```
 
-- [ ] **Step 7: Rodar o teste para verificar que passa**
+- [x] **Step 7: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*JogadorRepositoryTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 8: Compilar, verificar modularidade e commitar**
+- [x] **Step 8: Compilar, verificar modularidade e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
@@ -2291,7 +2291,7 @@ As 18 skills versionadas por temporada, mais os 8 atributos ocultos de personali
 - Consumes: `Jogador` e `Posicao` (Task 5); tabela `temporada` por FK `Long` (Task 2).
 - Produces: `JogadorAtributo` com os 18 campos `Integer` (0–99) nomeados exatamente: `ritmo, forca, folego, salto, agilidade, passe, drible, cruzamento, frieza, finalizacao, cabeceio, falta, penalti, desarme, marcacao, golReflexo, golPosicionamento, golManejo` — mais `potencialBase`, `potencialVariacao`, `fonteAtributo`. **O Plano 2 depende desses nomes exatos** para montar os perfis de peso.
 
-- [ ] **Step 1: Escrever a migration**
+- [x] **Step 1: Escrever a migration**
 
 `src/main/resources/db/migration/V8__cria_jogador_atributo.sql`:
 
@@ -2357,7 +2357,7 @@ create table jogador_atributo_oculto (
 );
 ```
 
-- [ ] **Step 2: Escrever o teste (vai falhar)**
+- [x] **Step 2: Escrever o teste (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/jogador/JogadorAtributoRepositoryTest.java`:
 
@@ -2474,12 +2474,12 @@ class JogadorAtributoRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*JogadorAtributoRepositoryTest'`
 Expected: FAIL na compilação — `JogadorAtributo` não existe.
 
-- [ ] **Step 4: Criar o enum e as entidades**
+- [x] **Step 4: Criar o enum e as entidades**
 
 `jogador/domain/FonteAtributo.java`:
 
@@ -2705,7 +2705,7 @@ public class JogadorAtributoOculto {
 }
 ```
 
-- [ ] **Step 5: Criar os repositórios**
+- [x] **Step 5: Criar os repositórios**
 
 `jogador/repository/JogadorAtributoRepository.java`:
 
@@ -2735,12 +2735,12 @@ public interface JogadorAtributoOcultoRepository extends JpaRepository<JogadorAt
 }
 ```
 
-- [ ] **Step 6: Rodar o teste para verificar que passa**
+- [x] **Step 6: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*JogadorAtributoRepositoryTest'`
 Expected: PASS nos três testes. O terceiro prova que o `check` de escala 0–99 está no banco, não só na aplicação.
 
-- [ ] **Step 7: Compilar e commitar**
+- [x] **Step 7: Compilar e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
@@ -2779,7 +2779,7 @@ Fecha o módulo `jogador`. As características são as skills especiais (voleio,
 - Consumes: `Jogador` (Task 5); tabelas `clube` e `temporada` por FK `Long`.
 - Produces: `JogadorVinculoRepository.buscarElenco(Long clubeId, Long temporadaId) -> List<JogadorVinculo>` com `join fetch` do jogador e da posição — a consulta que a API de elenco usa, e a que evitaria N+1 sobre 30 jogadores.
 
-- [ ] **Step 1: Escrever a migration**
+- [x] **Step 1: Escrever a migration**
 
 `src/main/resources/db/migration/V9__cria_caracteristica_e_vinculo.sql`:
 
@@ -2838,7 +2838,7 @@ create index idx_jogador_vinculo_clube_temporada on jogador_vinculo (clube_id, t
 create index idx_jogador_vinculo_jogador on jogador_vinculo (jogador_id);
 ```
 
-- [ ] **Step 2: Escrever o teste (vai falhar)**
+- [x] **Step 2: Escrever o teste (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/jogador/JogadorVinculoRepositoryTest.java`:
 
@@ -2948,12 +2948,12 @@ class JogadorVinculoRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*JogadorVinculoRepositoryTest'`
 Expected: FAIL na compilação — `JogadorVinculo` e `Caracteristica` não existem.
 
-- [ ] **Step 4: Criar enums e entidades**
+- [x] **Step 4: Criar enums e entidades**
 
 `jogador/domain/CategoriaCaracteristica.java`:
 
@@ -3192,7 +3192,7 @@ public class JogadorVinculo {
 }
 ```
 
-- [ ] **Step 5: Criar os repositórios**
+- [x] **Step 5: Criar os repositórios**
 
 `jogador/repository/CaracteristicaRepository.java`:
 
@@ -3238,12 +3238,12 @@ public interface JogadorVinculoRepository extends JpaRepository<JogadorVinculo, 
 }
 ```
 
-- [ ] **Step 6: Rodar o teste para verificar que passa**
+- [x] **Step 6: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*JogadorVinculoRepositoryTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 7: Compilar e commitar**
+- [x] **Step 7: Compilar e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
@@ -3285,7 +3285,7 @@ Competição, edição por temporada, fases e participantes — mais as regras d
 - Consumes: tabelas `pais`, `clube`, `temporada` por FK `Long`.
 - Produces: `CompeticaoService.listarPorPais(String isoPais) -> List<CompeticaoResumo>`, `CompeticaoService.buscarEdicao(String slugCompeticao, String labelTemporada) -> Optional<EdicaoDetalhe>`. `CompeticaoResumo(Long id, String slug, String nome, String tipo, Integer nivel)`, `EdicaoDetalhe(Long id, String nome, String competicao, LocalDate dataInicio, LocalDate dataFim, List<FaseResumo> fases, List<RegraClassificacaoResumo> regras)`.
 
-- [ ] **Step 1: Escrever as migrations**
+- [x] **Step 1: Escrever as migrations**
 
 `src/main/resources/db/migration/V10__cria_competicao.sql`:
 
@@ -3373,7 +3373,7 @@ create table regra_classificacao (
 create index idx_regra_classificacao_edicao on regra_classificacao (edicao_id);
 ```
 
-- [ ] **Step 2: Escrever o teste (vai falhar)**
+- [x] **Step 2: Escrever o teste (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/competicao/CompeticaoRepositoryTest.java`:
 
@@ -3481,12 +3481,12 @@ class CompeticaoRepositoryTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*CompeticaoRepositoryTest'`
 Expected: FAIL na compilação — as classes de `competicao` não existem.
 
-- [ ] **Step 4: Criar os enums e o package-info**
+- [x] **Step 4: Criar os enums e o package-info**
 
 `competicao/package-info.java`:
 
@@ -3525,7 +3525,7 @@ public enum TipoClassificacao {
 }
 ```
 
-- [ ] **Step 5: Criar as entidades**
+- [x] **Step 5: Criar as entidades**
 
 `competicao/domain/Competicao.java`:
 
@@ -3906,7 +3906,7 @@ public class RegraClassificacao {
 }
 ```
 
-- [ ] **Step 6: Criar os repositórios**
+- [x] **Step 6: Criar os repositórios**
 
 `competicao/repository/CompeticaoRepository.java`:
 
@@ -3980,12 +3980,12 @@ public interface RegraClassificacaoRepository extends JpaRepository<RegraClassif
 }
 ```
 
-- [ ] **Step 7: Rodar o teste para verificar que passa**
+- [x] **Step 7: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*CompeticaoRepositoryTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 8: Criar DTOs, mapper e serviço público**
+- [x] **Step 8: Criar DTOs, mapper e serviço público**
 
 `competicao/dto/CompeticaoResumo.java`:
 
@@ -4151,7 +4151,7 @@ class CompeticaoServiceImpl implements CompeticaoService {
 }
 ```
 
-- [ ] **Step 9: Compilar, verificar modularidade e commitar**
+- [x] **Step 9: Compilar, verificar modularidade e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest' --tests '*CompeticaoRepositoryTest'`
 Expected: PASS. `competicao` agora depende de `temporada` pela interface pública — dependência legítima e visível na documentação gerada pelo `Documenter`.
@@ -4185,7 +4185,7 @@ Primeiro endpoint do projeto. Estabelece o padrão de controller que as duas tar
 - Consumes: `ClubeService.listar(Pageable)` e `ClubeService.buscarPorSlug(String)` (Task 4); `RecursoNaoEncontradoException` (Task 1).
 - Produces: `GET /api/v1/clubes` (paginado) e `GET /api/v1/clubes/{slug}`.
 
-- [ ] **Step 1: Escrever o teste de controller (vai falhar)**
+- [x] **Step 1: Escrever o teste de controller (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/clube/web/ClubeControllerTest.java`:
 
@@ -4255,12 +4255,12 @@ class ClubeControllerTest {
 }
 ```
 
-- [ ] **Step 2: Rodar o teste para verificar que falha**
+- [x] **Step 2: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*ClubeControllerTest'`
 Expected: FAIL na compilação — `ClubeController` não existe.
 
-- [ ] **Step 3: Criar o controller**
+- [x] **Step 3: Criar o controller**
 
 `clube/web/ClubeController.java` — a classe é package-private de propósito: o controller é detalhe interno do módulo.
 
@@ -4306,12 +4306,12 @@ class ClubeController {
 }
 ```
 
-- [ ] **Step 4: Rodar o teste para verificar que passa**
+- [x] **Step 4: Rodar o teste para verificar que passa**
 
 Run: `./gradlew test --tests '*ClubeControllerTest'`
 Expected: PASS nos três testes. Se o terceiro falhar com 401 em vez de 404, a rota não foi liberada no `SecurityConfig` da Task 1 — confira a linha `GET /api/v1/clubes/**`.
 
-- [ ] **Step 5: Compilar e commitar**
+- [x] **Step 5: Compilar e commitar**
 
 Run: `./gradlew compileJava && ./gradlew test --tests '*ModularidadeTest'`
 Expected: PASS.
@@ -4346,7 +4346,7 @@ Cria o `JogadorService` — que as Tasks 5 a 7 deixaram pendente de propósito, 
 - Consumes: `JogadorRepository`, `JogadorAtributoRepository`, `JogadorVinculoRepository` (Tasks 5–7); `TemporadaService` (Task 2); `ClubeService.buscarPorSlug` (Task 4).
 - Produces: `JogadorService.buscarPorSlug(String slug, String labelTemporada) -> Optional<JogadorDetalhe>` e `JogadorService.listarElenco(String slugClube, String labelTemporada) -> List<JogadorResumo>`.
 
-- [ ] **Step 1: Criar os DTOs**
+- [x] **Step 1: Criar os DTOs**
 
 `jogador/dto/JogadorResumo.java`:
 
@@ -4406,7 +4406,7 @@ public record JogadorDetalhe(
 }
 ```
 
-- [ ] **Step 2: Escrever o teste de controller (vai falhar)**
+- [x] **Step 2: Escrever o teste de controller (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/jogador/web/JogadorControllerTest.java`:
 
@@ -4480,12 +4480,12 @@ class JogadorControllerTest {
 }
 ```
 
-- [ ] **Step 3: Rodar o teste para verificar que falha**
+- [x] **Step 3: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*JogadorControllerTest'`
 Expected: FAIL na compilação — `JogadorService` e `JogadorController` não existem.
 
-- [ ] **Step 4: Criar o mapper**
+- [x] **Step 4: Criar o mapper**
 
 `jogador/mapper/JogadorMapper.java`:
 
@@ -4507,7 +4507,7 @@ public interface JogadorMapper {
 
 `JogadorDetalhe` e `JogadorResumo` são montados à mão no service porque combinam dados de três repositórios — MapStruct não ajuda quando a origem é composta.
 
-- [ ] **Step 5: Criar o serviço público e a implementação**
+- [x] **Step 5: Criar o serviço público e a implementação**
 
 `jogador/JogadorService.java`:
 
@@ -4622,7 +4622,7 @@ class JogadorServiceImpl implements JogadorService {
 
 A lista de características fica vazia neste plano — a associação existe no banco desde a Task 7, e populá-la só faz sentido quando o importador do Plano 3 a preencher. Devolver `List.of()` é honesto; inventar dado não seria.
 
-- [ ] **Step 6: Criar o controller**
+- [x] **Step 6: Criar o controller**
 
 `jogador/web/JogadorController.java`:
 
@@ -4669,7 +4669,7 @@ class JogadorController {
 
 O elenco não é paginado porque um elenco tem limite natural (algumas dezenas de jogadores) e paginar uma lista que nunca cresce só complica o cliente.
 
-- [ ] **Step 7: Rodar o teste e commitar**
+- [x] **Step 7: Rodar o teste e commitar**
 
 Run: `./gradlew test --tests '*JogadorControllerTest'`
 Expected: PASS nos três testes.
@@ -4703,7 +4703,7 @@ git commit -m "feat(jogador): expõe consulta de jogador e elenco em /api/v1/jog
 - Consumes: `CompeticaoService` (Task 8).
 - Produces: `GET /api/v1/competicoes?pais=BRA` e `GET /api/v1/competicoes/{slug}/edicoes/{temporada}`.
 
-- [ ] **Step 1: Escrever o teste de controller (vai falhar)**
+- [x] **Step 1: Escrever o teste de controller (vai falhar)**
 
 `src/test/java/br/com/api/footfirma/competicao/web/CompeticaoControllerTest.java`:
 
@@ -4777,12 +4777,12 @@ class CompeticaoControllerTest {
 }
 ```
 
-- [ ] **Step 2: Rodar o teste para verificar que falha**
+- [x] **Step 2: Rodar o teste para verificar que falha**
 
 Run: `./gradlew test --tests '*CompeticaoControllerTest'`
 Expected: FAIL na compilação — `CompeticaoController` não existe.
 
-- [ ] **Step 3: Criar o controller**
+- [x] **Step 3: Criar o controller**
 
 `competicao/web/CompeticaoController.java`:
 
@@ -4828,12 +4828,12 @@ class CompeticaoController {
 }
 ```
 
-- [ ] **Step 4: Rodar o teste**
+- [x] **Step 4: Rodar o teste**
 
 Run: `./gradlew test --tests '*CompeticaoControllerTest'`
 Expected: PASS nos três testes.
 
-- [ ] **Step 5: Registrar a decisão arquitetural**
+- [x] **Step 5: Registrar a decisão arquitetural**
 
 O checklist (`.rules/java-checklist.md`, item 9) exige registrar decisão arquitetural relevante.
 
@@ -4882,14 +4882,14 @@ grep -rL "PostMapping\|PutMapping\|DeleteMapping" src/main/java/br/com/api/footf
 ```
 ```
 
-- [ ] **Step 6: Rodar a suíte completa**
+- [x] **Step 6: Rodar a suíte completa**
 
 Este é o único ponto do plano em que a suíte inteira roda. Exige Docker.
 
 Run: `./gradlew build`
 Expected: BUILD SUCCESSFUL, com todos os testes verdes. Se algum falhar, corrija antes de commitar — não enfraqueça o teste.
 
-- [ ] **Step 7: Percorrer o checklist e commitar**
+- [x] **Step 7: Percorrer o checklist e commitar**
 
 Percorra `.rules/java-checklist.md` inteiro. Itens que merecem atenção específica neste plano:
 
@@ -4920,7 +4920,7 @@ Ao terminar a Task 11, estes fatos devem ser verdadeiros:
 |---|---|
 | Compila | `./gradlew compileJava` |
 | Suíte completa verde | `./gradlew build` |
-| 10 migrations aplicadas, nenhuma editada | `ls src/main/resources/db/migration/` |
+| 11 migrations aplicadas, nenhuma editada | `ls src/main/resources/db/migration/` |
 | Fronteiras de módulo íntegras | `./gradlew test --tests '*ModularidadeTest'` |
 | Catálogo é read-only | nenhum `@PostMapping`/`@PutMapping`/`@DeleteMapping` em `*/web/` |
 
