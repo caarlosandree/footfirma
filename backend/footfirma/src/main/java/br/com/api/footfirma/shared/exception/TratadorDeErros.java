@@ -19,6 +19,21 @@ class TratadorDeErros {
         return problema;
     }
 
+    @ExceptionHandler(DistribuicaoInvalidaException.class)
+    ProblemDetail distribuicaoInvalida(DistribuicaoInvalidaException excecao) {
+        var problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY, excecao.getMessage());
+        problema.setTitle("Distribuição de skills inválida");
+        return problema;
+    }
+
+    @ExceptionHandler(PropostaIndisponivelException.class)
+    ProblemDetail propostaIndisponivel(PropostaIndisponivelException excecao) {
+        var problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, excecao.getMessage());
+        problema.setTitle("Proposta indisponível");
+        return problema;
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ProblemDetail invalido(MethodArgumentNotValidException excecao) {
         var problema = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
