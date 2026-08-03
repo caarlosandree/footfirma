@@ -139,21 +139,39 @@ execução de importação e `chave_natural` no papel de chave de idempotência 
 `jogador.chave_natural` e `jogador.semente` **ficam**: a semente deriva da chave e é a
 origem de todo atributo oculto do jogador.
 
-### Schema — migration `V15`
+### Schema — migrations `V15` e `V16`
 
-`V14` está versionada e o guard bloqueia editá-la.
+`V14` está versionada e o guard bloqueia editá-la. São duas migrations porque são
+duas mudanças lógicas: uma remove, a outra adiciona.
+
+`V15__remove_importacao.sql`:
 
 ```sql
-drop table importacao_ocorrencia;
-drop table importacao_contagem;
-drop table importacao_execucao;
+drop table if exists importacao_ocorrencia;
+drop table if exists importacao_contagem;
+drop table if exists importacao_execucao;
+```
 
+`V16__adiciona_forca_financeira_e_categoria.sql`:
+
+```sql
 alter table clube add column forca_financeira integer not null default 50
     check (forca_financeira between 0 and 99);
 
 alter table jogador_vinculo add column categoria text not null default 'PROFISSIONAL'
     check (categoria in ('PROFISSIONAL', 'BASE'));
+
+create index idx_jogador_vinculo_categoria on jogador_vinculo (clube_id, categoria);
+
+alter table jogador_atributo drop constraint jogador_atributo_fonte_atributo_check;
+alter table jogador_atributo add constraint jogador_atributo_fonte_atributo_check
+    check (fonte_atributo in ('IMPORTADO', 'ESTIMADO', 'GERADO'));
 ```
+
+O terceiro bloco não estava previsto e apareceu na escrita do plano: `fonte_atributo`
+aceitava só `IMPORTADO` e `ESTIMADO`. Atributo gerado não é nenhum dos dois — não veio
+de lugar nenhum nem foi inferido de observação. `IMPORTADO` permanece no conjunto
+porque linhas antigas ainda o usam.
 
 `clube_alias` e as três tabelas `*_referencia_externa` existem para casar registros com
 fontes externas (`EA_FC`, `TRANSFERMARKT`). Num mundo fictício não há o que casar. Elas
@@ -165,22 +183,36 @@ Ficam como dívida registrada, não como esquecimento.
 
 ```
 mundo/
-  MundoService.java              gerar(SementeDeMundo) → RelatorioDeMundo
+  MundoService.java              gerar() → RelatorioDeMundo
   dto/
-    RelatorioDeMundo.java        contagens por entidade e semente usada
+    RelatorioDeMundo.java        semente usada, temporada e contagens
     ContagemPorEntidade.java
   internal/
-    GeradorDeMundo.java          orquestrador
+    MundoServiceImpl.java        orquestrador: ligas, clubes, elencos, materialização
     CatalogoDeArquetipos.java    os seis arquétipos e a distribuição por divisão
+    Arquetipo.java               faixas de um perfil de clube
     FabricaDeClubes.java         arquétipo → eixos, cidade, estádio, cores
-    FabricaDeCompeticoes.java    duas ligas, edições, fases, participantes, regras
     FabricaDeElenco.java         cotas de papel → alvos de overall, idade e potencial
     FabricaDeAtributos.java      alvo de overall + posição → as 18 skills
+    PapelNoElenco.java           enum das cotas, deltas e faixas de idade
+    ClubeGerado.java             clube antes de virar linha
+    JogadorGerado.java           jogador antes de virar linha
+    AtributosGerados.java        as 18 skills
+    ChaveDeJogador.java          chave natural e semente (herdado de `importacao`)
     GeradorDeNomes.java          lista curada de clubes; pools de nomes de jogador
     LimpezaDoCatalogo.java       apaga o catálogo na ordem inversa das FKs
     PropriedadesDeMundo.java     footfirma.mundo.semente / .recriar
     MundoRunner.java             ApplicationRunner sob profile `mundo`
 ```
+
+As fábricas são **puras**: recebem um `SplittableRandom` e devolvem records, sem
+Spring e sem banco. Isso mantém o orquestrador enxuto e dá teste unitário de
+balanceamento que roda em milissegundos, sem Docker.
+
+`LimpezaDoCatalogo` é a única exceção à regra de não tocar tabela alheia: apaga por
+`JdbcTemplate`, porque esvaziar o catálogo inteiro é operação de infraestrutura sobre
+o banco, não escrita de domínio. A alternativa seria expor um método destrutivo na
+interface pública de cinco módulos — superfície pior que uma lista de tabelas.
 
 ### Fluxo
 
@@ -191,7 +223,7 @@ subir com --spring.profiles.active=mundo
        │     vínculo → característica → atributo oculto → atributo → posição do
        │     jogador → overall → jogador → participante → regra → fase → edição →
        │     clube → estádio → competição → temporada
-       ├─ GeradorDeMundo.gerar(semente)
+       ├─ MundoServiceImpl.gerar()
        │     temporada → competições → clubes → elencos → atributos
        │     └─ avaliacaoService.materializar("2026")
        └─ RelatorioDeMundo no log
@@ -309,12 +341,20 @@ semente do jogador, como hoje.
 
 | Teste | Afirma |
 |---|---|
-| `MundoDeterminismoTest` | mesma semente produz os mesmos slugs e os mesmos overalls |
-| `MundoIntegridadeTest` | 40 clubes, 1.520 jogadores, 26+12 por clube, nove posições cobertas em cada elenco, camisas únicas |
-| `MundoBalanceamentoTest` | divisão 1 com média acima da divisão 2; todo clube com destaque ≥ média do elenco + 8; existe clube com `forca_financeira` < 50 e joia de potencial ≥ 88; overall médio correlaciona com `nivel_elenco` |
-| `MundoAtributoTest` | overall materializado fica a ≤ 2 pontos do alvo, nas nove posições |
-| `MundoLimpezaTest` | gerar duas vezes com `recriar=true` não duplica linha nem deixa órfão |
-| `ModularidadeTest` (existente) | `mundo` não alcança repository de outro módulo |
+| `FabricaDeClubesTest` (unitário) | 40 clubes, 20 por divisão, slugs e cidades únicos, faixas respeitadas, existe Celeiro pobre com base ≥ 85 e Gigante Endividado |
+| `FabricaDeElencoTest` (unitário) | 26+12, nove posições cobertas, camisas únicas, estrela ≥ média + 8, joia de potencial ≥ 88 em clube pobre, potencial nunca abaixo do overall |
+| `FabricaDeAtributosTest` (unitário) | skills na faixa 1–99, qualidade concentrada nas skills do perfil, skill de goleiro baixa em jogador de linha |
+| `MundoLigaTest` | duas competições, duas edições, regras de acesso e rebaixamento |
+| `MundoClubeTest` | 40 clubes com estádio próprio, 20 por divisão, estado resolvido |
+| `MundoIntegridadeTest` | 1.520 jogadores, 26+12 por clube, nove posições em cada elenco, camisas únicas, 13.680 linhas de overall dentro da faixa |
+| `MundoBalanceamentoTest` | divisão 1 com média acima da divisão 2; todo clube com destaque ≥ média + 8; joia em clube com `forca_financeira` < 50; overall médio a ≤ 8 pontos de `nivel_elenco` |
+| `MundoDeterminismoTest` | mesma semente produz os mesmos slugs e overalls; regerar com `recriar=true` não duplica nem deixa órfão |
+| `ModularidadeTest` (existente) | `mundo` não alcança tipo `internal` de outro módulo |
+
+A tolerância entre alvo e overall materializado é verificada como **correlação por
+clube** (`MundoBalanceamentoTest`), não jogador a jogador: o alvo individual não é
+gravado em lugar nenhum, e reconstruí-lo no teste duplicaria a fábrica dentro da
+asserção.
 
 Os testes de balanceamento são o que impede o mundo de degradar em ruído a cada
 ajuste de faixa. Sem eles, um erro de sinal numa fórmula produziria um mundo plausível
@@ -330,8 +370,8 @@ arquivo: rebalancear é editar uma tabela e rodar de novo.
 **2. A inversão do overall pode não convergir dentro da tolerância em posições com
 poucos atributos de peso alto.** Goleiro concentra 82% do peso em três skills; um
 ruído infeliz nelas desloca o overall mais que nas demais posições.
-`MundoAtributoTest` cobre as nove posições justamente para que isso apareça como
-falha, não como time de goleiros ruins.
+`FabricaDeAtributosTest` e `MundoBalanceamentoTest` cobrem as nove posições
+justamente para que isso apareça como falha, não como time de goleiros ruins.
 
 **3. Nome de jogador pode coincidir com pessoa real.** Com 1.520 combinações de pools
 de prenomes e sobrenomes brasileiros, a chance não é desprezível, e revisar à mão é
