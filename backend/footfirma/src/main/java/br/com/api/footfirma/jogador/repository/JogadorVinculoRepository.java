@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface JogadorVinculoRepository extends JpaRepository<JogadorVinculo, Long> {
 
@@ -28,4 +29,6 @@ public interface JogadorVinculoRepository extends JpaRepository<JogadorVinculo, 
                                       @Param("temporadaId") Long temporadaId);
 
     List<JogadorVinculo> findByJogadorIdOrderByTemporadaIdDesc(Long jogadorId);
+
+    Optional<JogadorVinculo> findByJogadorIdAndTemporadaIdAndClubeId(Long jogadorId, Long temporadaId, Long clubeId);
 }
