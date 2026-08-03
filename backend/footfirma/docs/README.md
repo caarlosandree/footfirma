@@ -6,10 +6,11 @@ trabalhar nele** ficam em `.rules/` — não misture os dois.
 | Pasta | Conteúdo |
 |---|---|
 | `docs/runbooks/` | procedimentos operacionais (validação, diagnóstico) |
+| `docs/adr/` | decisões arquiteturais e o motivo delas |
 | `docs/domain/` | uma nota por domínio de negócio, criada quando o módulo existir |
 
-Hoje só existe o runbook de validação. `docs/domain/` nasce junto com o primeiro
-módulo de domínio — documentar antes seria ficção.
+`docs/domain/` nasce junto com a primeira nota de domínio que tenha lastro no
+código — documentar antes seria ficção.
 
 ## Padrão obrigatório de nota técnica
 
