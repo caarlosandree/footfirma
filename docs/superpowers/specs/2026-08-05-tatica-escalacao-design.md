@@ -142,20 +142,65 @@ de autenticação.
 Não depende de `competicao` nem de `mundo`. Ninguém depende de `tatica` hoje; `partida`
 vai depender.
 
-### Ajuste fora do módulo
+### Ajustes fora do módulo
 
-`TreinadorService` já expõe seis métodos — `buscarPorSlug`, `criar`, `distribuirPontos`,
-`listarPropostasAbertas`, `aceitarProposta`, `recusarProposta` —, mas nenhum deles parte
-do clube. O escalador precisa de "quem dirige o clube X nesta temporada", então a porta
-pública do `treinador` ganha:
+O escalador precisa de três coisas que nenhuma porta pública entrega hoje: quem dirige o
+clube, o elenco com ids e categoria, e o overall de todo o elenco em todas as posições.
+São três acréscimos, nenhum deles alterando assinatura existente.
+
+**`treinador`** — a porta já expõe seis métodos (`buscarPorSlug`, `criar`,
+`distribuirPontos`, `listarPropostasAbertas`, `aceitarProposta`, `recusarProposta`), e
+nenhum parte do clube. Ganha um sétimo, mais um record no pacote raiz do módulo:
 
 ```java
-Optional<TreinadorDetalhe> buscarPorClube(long clubeId, long temporadaId);
+// treinador/PerfilDeTreinador.java — pacote raiz, ao lado dos records de evento
+public record PerfilDeTreinador(long treinadorId, int reputacao, int tatica) { }
+
+// treinador/TreinadorService.java
+Optional<PerfilDeTreinador> buscarPerfilDoClube(long clubeId, long temporadaId);
 ```
 
-É acréscimo, não alteração — `vinculo_treinador` já tem os dados e o índice, e
-`Optional` é o retorno que `buscarPorSlug` já usa, então a porta não fica com dois
-estilos. Mas é mexer num módulo recém-mergeado, e precisa estar explícito no plano.
+O retorno **não** é `TreinadorDetalhe`, e a razão é estrutural: `treinador/dto/` não tem
+`package-info.java`, ao contrário de `jogador/dto/` e `avaliacao/dto/`, que declaram
+`@NamedInterface("dto")`. Sem essa anotação o Modulith trata o subpacote como interno, e
+`TreinadorDetalhe` — que ainda por cima expõe `Map<Skill, Integer>` de `treinador.domain`
+— reprovaria em `ModularidadeTest` assim que `tatica` o referenciasse. Hoje isso não
+aparece porque nenhum módulo consome `treinador`; `tatica` seria o primeiro.
+
+A alternativa era anotar `treinador.dto` e `treinador.domain` como interfaces nomeadas,
+o que publicaria seis DTOs e onze tipos de domínio para alimentar um consumidor que quer
+dois inteiros. Um record de três campos no pacote raiz — onde os eventos já moram — custa
+menos e vaza nada.
+
+**`jogador`** — `listarElenco(slugClube, labelTemporada)` devolve `JogadorResumo`, que
+traz a posição como texto e não traz a categoria. O escalador precisa de ids e de
+`categoria` para aplicar a regra de `BASE`:
+
+```java
+// jogador/dto/JogadorDoElenco.java — o pacote já é @NamedInterface("dto")
+public record JogadorDoElenco(Long jogadorId, Long posicaoPrincipalId,
+                              String categoria, Integer numeroCamisa) { }
+
+List<JogadorDoElenco> listarElencoParaEscalacao(long clubeId, long temporadaId);
+```
+
+`categoria` é `String` porque `CategoriaDeElenco` vive em `jogador.domain`, que é
+interno. É a mesma travessia que `DadosDeVinculo` já faz na entrada.
+
+**`avaliacao`** — `buscarPorSlug` devolve as nove posições de **um** jogador, por slug.
+Montar um onze exige as nove de ~30 jogadores, e `jogador_overall` está em
+`avaliacao.repository`, que o Modulith fecha:
+
+```java
+// avaliacao/dto/OverallDeJogador.java — o pacote já é @NamedInterface("dto")
+public record OverallDeJogador(Long jogadorId, Long posicaoId, Integer overall) { }
+
+List<OverallDeJogador> listarOveralls(Collection<Long> jogadorIds, long temporadaId);
+```
+
+Nenhum dos três é opcional, e `ModularidadeTest` roda `modulos.verify()` a cada build —
+qualquer atalho por dentro de outro módulo quebra a suíte. `mundo` já consome
+`AvaliacaoService` e `JogadorService` por esse caminho, então o padrão está estabelecido.
 
 ### Schema — migrations `V20` e `V21`
 
@@ -458,7 +503,13 @@ ganhar cinco campeonatos continuará jogando defensivo para sempre — e a médi
 por ser média de valores fixos, também nunca se move. É o risco 3 do spec do treinador
 reaparecendo num segundo lugar, e o dono continua sendo o spec de progressão.
 
-**6. Um plano vigente atravessa a temporada inteira sem revisão.** Um humano que escale
+**6. A camada abre três portas em três módulos antes de entregar valor visível.**
+`treinador`, `jogador` e `avaliacao` ganham um método público cada para alimentar um
+consumidor único. Se `tatica` for descartada ou redesenhada, os três acréscimos ficam
+órfãos. Mitigado por serem pequenos e por nenhum deles alterar assinatura existente — mas
+é dívida de superfície pública contraída antes de a partida provar que a camada serve.
+
+**7. Um plano vigente atravessa a temporada inteira sem revisão.** Um humano que escale
 uma vez e não volte joga o ano com o mesmo onze, envelhecendo. É consequência direta de
 plano ser do clube e não da partida (decisão 2), e só deixa de incomodar quando existir
 calendário para pendurar a revisão.
