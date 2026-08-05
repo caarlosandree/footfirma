@@ -43,6 +43,14 @@ class TratadorDeErros {
         return problema;
     }
 
+    @ExceptionHandler(ResultadoInvalidoException.class)
+    ProblemDetail resultadoInvalido(ResultadoInvalidoException excecao) {
+        var problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY, excecao.getMessage());
+        problema.setTitle("Resultado inválido");
+        return problema;
+    }
+
     @ExceptionHandler(PropostaIndisponivelException.class)
     ProblemDetail propostaIndisponivel(PropostaIndisponivelException excecao) {
         var problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, excecao.getMessage());

@@ -12,6 +12,7 @@ import br.com.api.footfirma.calendario.dto.RegrasDeDesempate;
 import br.com.api.footfirma.calendario.dto.RelatorioDeCalendario;
 import br.com.api.footfirma.calendario.dto.ResultadoDoJogo;
 import br.com.api.footfirma.calendario.dto.RodadaDetalhe;
+import br.com.api.footfirma.calendario.dto.SituacaoDoJogo;
 import br.com.api.footfirma.calendario.repository.ConfrontoRepository;
 import br.com.api.footfirma.calendario.repository.JogoRepository;
 import br.com.api.footfirma.calendario.repository.RodadaRepository;
@@ -19,6 +20,8 @@ import br.com.api.footfirma.clube.ClubeService;
 import br.com.api.footfirma.competicao.CompeticaoService;
 import br.com.api.footfirma.competicao.dto.FaseResumo;
 import br.com.api.footfirma.shared.exception.CalendarioInvalidoException;
+import br.com.api.footfirma.shared.exception.RecursoNaoEncontradoException;
+import br.com.api.footfirma.shared.exception.ResultadoInvalidoException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -178,7 +181,82 @@ class CalendarioServiceImpl implements CalendarioService {
     @Override
     @Transactional
     public void registrarResultado(long jogoId, ResultadoDoJogo resultado) {
-        throw new UnsupportedOperationException("Chega na Task 7");
+        var jogo = jogos.findById(jogoId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Jogo não encontrado: " + jogoId));
+
+        if (jogo.getSituacao() == SituacaoDoJogo.ENCERRADO) {
+            throw new ResultadoInvalidoException("Jogo %d já está encerrado".formatted(jogoId));
+        }
+        if (jogo.getMandanteId() == null || jogo.getVisitanteId() == null) {
+            throw new ResultadoInvalidoException(
+                    "Jogo %d ainda não tem os dois clubes definidos".formatted(jogoId));
+        }
+
+        var fase = competicaoService.buscarFase(jogo.getRodada().getFaseId())
+                .orElseThrow(() -> new CalendarioInvalidoException(
+                        "Fase %d sumiu".formatted(jogo.getRodada().getFaseId())));
+        validarDesempate(jogoId, resultado, fase);
+
+        jogo.setGolsMandante(resultado.golsMandante());
+        jogo.setGolsVisitante(resultado.golsVisitante());
+        jogo.setGolsMandanteProrrogacao(resultado.golsMandanteProrrogacao());
+        jogo.setGolsVisitanteProrrogacao(resultado.golsVisitanteProrrogacao());
+        jogo.setPenaltisMandante(resultado.penaltisMandante());
+        jogo.setPenaltisVisitante(resultado.penaltisVisitante());
+        jogo.setSituacao(SituacaoDoJogo.ENCERRADO);
+        jogos.save(jogo);
+
+        // Só eliminatória resolve confronto. Em pontos corridos e grupos quem avança é
+        // decidido por classificação, que não é deste módulo.
+        if ("ELIMINATORIA".equals(fase.tipo())) {
+            resolver(jogo.getConfronto(), fase);
+        }
+    }
+
+    /**
+     * Recusa o desempate que a fase não declara.
+     *
+     * <p>Aceitar pênalti em pontos corridos guardaria no banco um dado que a competição
+     * não produz, e nada depois saberia dizer se foi engano ou regra.
+     */
+    private void validarDesempate(long jogoId, ResultadoDoJogo resultado, FaseResumo fase) {
+        var temProrrogacao = resultado.golsMandanteProrrogacao() != null
+                || resultado.golsVisitanteProrrogacao() != null;
+        var temPenaltis = resultado.penaltisMandante() != null
+                || resultado.penaltisVisitante() != null;
+
+        if (temProrrogacao && !Boolean.TRUE.equals(fase.temProrrogacao())) {
+            throw new ResultadoInvalidoException(
+                    "Jogo %d não admite prorrogação: a fase não a declara".formatted(jogoId));
+        }
+        if (temPenaltis && !Boolean.TRUE.equals(fase.temPenaltis())) {
+            throw new ResultadoInvalidoException(
+                    "Jogo %d não admite pênaltis: a fase não os declara".formatted(jogoId));
+        }
+    }
+
+    private void resolver(Confronto confronto, FaseResumo fase) {
+        var doConfronto = jogos.findByConfrontoIdOrderByOrdemNoConfrontoAsc(confronto.getId());
+        if (doConfronto.stream().anyMatch(j -> j.getSituacao() != SituacaoDoJogo.ENCERRADO)) {
+            return;
+        }
+
+        var placares = doConfronto.stream()
+                .map(j -> new PlacarDoConfronto(j.getMandanteId(), j.getVisitanteId(),
+                        j.getGolsMandante(), j.getGolsVisitante(),
+                        j.getGolsMandanteProrrogacao(), j.getGolsVisitanteProrrogacao(),
+                        j.getPenaltisMandante(), j.getPenaltisVisitante()))
+                .toList();
+
+        var regras = new RegrasDeDesempate(fase.temGolFora(), fase.temProrrogacao(),
+                fase.temPenaltis(), true);
+
+        ResolvedorDeConfronto.resolver(placares, regras,
+                        confronto.getClubeAId(), confronto.getClubeBId())
+                .ifPresent(vencedor -> {
+                    confronto.setVencedorClubeId(vencedor);
+                    confrontos.save(confronto);
+                });
     }
 
     @Override
