@@ -4,6 +4,7 @@ import br.com.api.footfirma.avaliacao.AvaliacaoService;
 import br.com.api.footfirma.avaliacao.dto.OverallDeJogador;
 import br.com.api.footfirma.jogador.JogadorService;
 import br.com.api.footfirma.jogador.dto.JogadorDoElenco;
+import br.com.api.footfirma.shared.exception.EscalacaoInvalidaException;
 import br.com.api.footfirma.shared.exception.RecursoNaoEncontradoException;
 import br.com.api.footfirma.tatica.TaticaService;
 import br.com.api.footfirma.tatica.domain.FormacaoSlot;
@@ -18,6 +19,8 @@ import br.com.api.footfirma.tatica.repository.FormacaoRepository;
 import br.com.api.footfirma.tatica.repository.FormacaoSlotRepository;
 import br.com.api.footfirma.tatica.repository.PlanoEscalacaoRepository;
 import br.com.api.footfirma.tatica.repository.PlanoTaticoRepository;
+import br.com.api.footfirma.treinador.PerfilDeTreinador;
+import br.com.api.footfirma.treinador.TreinadorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -43,6 +46,7 @@ class TaticaServiceImpl implements TaticaService {
     private final FormacaoRepository formacoes;
     private final JogadorService jogadorService;
     private final AvaliacaoService avaliacaoService;
+    private final TreinadorService treinadorService;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -59,6 +63,66 @@ class TaticaServiceImpl implements TaticaService {
         var overalls = tabelaDe(principalPorJogador.keySet(), temporadaId);
         return gravar(clubeId, temporadaId, novo, OrigemDoPlano.MANUAL,
                 posicaoPorSlot, principalPorJogador, overalls);
+    }
+
+    @Override
+    @Transactional
+    public PlanoVigente garantirPlanoVigente(long clubeId, long temporadaId) {
+        var vigente = planos.findByClubeIdAndTemporadaIdAndVigenteTrue(clubeId, temporadaId);
+        if (vigente.isPresent()) {
+            return montar(vigente.get(), temporadaId);
+        }
+
+        var elenco = jogadorService.listarElencoParaEscalacao(clubeId, temporadaId);
+        var principalPorJogador = elenco.stream().collect(Collectors.toMap(
+                JogadorDoElenco::jogadorId, JogadorDoElenco::posicaoPrincipalId));
+        var overalls = tabelaDe(principalPorJogador.keySet(), temporadaId);
+        var goleiro = idDaPosicaoDeGoleiro();
+
+        var disponiveis = elenco.stream()
+                .map(jogador -> new JogadorDisponivel(jogador.jogadorId(),
+                        jogador.posicaoPrincipalId(), "BASE".equals(jogador.categoria())))
+                .toList();
+
+        // Sem vínculo ativo o clube escala mesmo assim, com repertório mínimo: um clube
+        // sem treinador continua entrando em campo.
+        var tatica = treinadorService.buscarPerfilDoClube(clubeId, temporadaId)
+                .map(PerfilDeTreinador::tatica)
+                .orElse(0);
+
+        var novo = EscaladorAutomatico.montar(catalogoDeFormacoes(), tatica, disponiveis,
+                        overalls, goleiro, reputacaoDoClube(clubeId), mediaDeReputacao())
+                .orElseThrow(() -> new EscalacaoInvalidaException(
+                        "elenco do clube %d não fecha um time na temporada %d"
+                                .formatted(clubeId, temporadaId)));
+
+        var planoId = gravar(clubeId, temporadaId, novo, OrigemDoPlano.AUTOMATICO,
+                posicaoPorSlotDe(novo.formacaoId()), principalPorJogador, overalls);
+        return montar(planos.findById(planoId).orElseThrow(), temporadaId);
+    }
+
+    private List<FormacaoCandidata> catalogoDeFormacoes() {
+        return formacoes.findAllByOrderByOrdemAsc().stream()
+                .map(formacao -> new FormacaoCandidata(formacao.getId(), formacao.getOrdem(),
+                        formacaoSlots.findByFormacaoIdOrderByOrdemAsc(formacao.getId()).stream()
+                                .map(FormacaoSlot::getPosicaoId)
+                                .toList()))
+                .toList();
+    }
+
+    private int reputacaoDoClube(long clubeId) {
+        return jdbcTemplate.queryForObject(
+                "select reputacao from clube where id = ?", Integer.class, clubeId);
+    }
+
+    /**
+     * Média global, e não da divisão: saber a divisão exigiria depender de
+     * {@code competicao}, e um clube pode disputar mais de uma competição.
+     */
+    private double mediaDeReputacao() {
+        var media = jdbcTemplate.queryForObject(
+                "select avg(reputacao) from clube", Double.class);
+        return media == null ? 0.0 : media;
     }
 
     @Override

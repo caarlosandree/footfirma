@@ -32,4 +32,16 @@ public interface TaticaService {
      * garantir que exista chama {@code garantirPlanoVigente}.
      */
     Optional<PlanoVigente> buscarPlanoVigente(long clubeId, long temporadaId);
+
+    /**
+     * Devolve o plano vigente do clube, criando um automaticamente se não houver.
+     *
+     * <p>Método explícito, e não efeito colateral de leitura: quem chama é o gerador de
+     * mundo e, no futuro, a partida no apito inicial.
+     *
+     * @throws br.com.api.footfirma.shared.exception.EscalacaoInvalidaException
+     *         se o elenco não fecha um time — falhar alto é melhor do que a partida
+     *         descobrir isso em campo
+     */
+    PlanoVigente garantirPlanoVigente(long clubeId, long temporadaId);
 }
