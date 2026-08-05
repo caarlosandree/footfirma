@@ -1,5 +1,7 @@
 package br.com.api.footfirma.calendario;
 
+import br.com.api.footfirma.calendario.dto.PerfilDeCalendario;
+import br.com.api.footfirma.calendario.dto.TipoDeRodada;
 import br.com.api.footfirma.clube.ClubeService;
 import br.com.api.footfirma.clube.dto.DadosDeClube;
 import br.com.api.footfirma.clube.dto.DadosDeEstadio;
@@ -14,9 +16,11 @@ import br.com.api.footfirma.temporada.dto.DadosDeTemporada;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Semeia temporada, competição, edição, fase e participantes para os testes de calendário.
@@ -31,6 +35,13 @@ public class CalendarioFactory {
     /** A janela do mundo gerado: 246 dias, ou 35 semanas. */
     public static final LocalDate INICIO = LocalDate.of(2026, 4, 4);
     public static final LocalDate FIM = LocalDate.of(2026, 12, 6);
+
+    /** Os pesos da Série A, medidos na tabela real da CBF. Nada na sexta. */
+    public static final PerfilDeCalendario PERFIL = new PerfilDeCalendario(Map.of(
+            TipoDeRodada.FIM_DE_SEMANA, Map.of(
+                    DayOfWeek.SUNDAY, 45, DayOfWeek.SATURDAY, 40, DayOfWeek.MONDAY, 15),
+            TipoDeRodada.MEIO_DE_SEMANA, Map.of(
+                    DayOfWeek.WEDNESDAY, 60, DayOfWeek.THURSDAY, 40)), 3);
 
     private final TemporadaService temporadaService;
     private final CompeticaoService competicaoService;

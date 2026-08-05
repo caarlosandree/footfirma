@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface EdicaoRepository extends JpaRepository<Edicao, Long> {
@@ -24,4 +25,6 @@ public interface EdicaoRepository extends JpaRepository<Edicao, Long> {
     // Sem join fetch, ao contrário do método acima: aqui o alvo é upsert, não montar
     // DTO de leitura.
     Optional<Edicao> findByCompeticaoIdAndTemporadaId(Long competicaoId, Long temporadaId);
+
+    List<Edicao> findByTemporadaId(Long temporadaId);
 }

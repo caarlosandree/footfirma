@@ -35,6 +35,14 @@ class TratadorDeErros {
         return problema;
     }
 
+    @ExceptionHandler(CalendarioInvalidoException.class)
+    ProblemDetail calendarioInvalido(CalendarioInvalidoException excecao) {
+        var problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY, excecao.getMessage());
+        problema.setTitle("Calendário inválido");
+        return problema;
+    }
+
     @ExceptionHandler(PropostaIndisponivelException.class)
     ProblemDetail propostaIndisponivel(PropostaIndisponivelException excecao) {
         var problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, excecao.getMessage());

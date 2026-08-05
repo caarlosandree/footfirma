@@ -76,6 +76,18 @@ class CompeticaoServiceImpl implements CompeticaoService {
     }
 
     @Override
+    public Optional<FaseResumo> buscarFase(long faseId) {
+        return faseRepository.findById(faseId).map(competicaoMapper::paraResumo);
+    }
+
+    @Override
+    public List<Long> listarEdicoesDaTemporada(long temporadaId) {
+        return edicaoRepository.findByTemporadaId(temporadaId).stream()
+                .map(Edicao::getId)
+                .toList();
+    }
+
+    @Override
     public Optional<EdicaoDetalhe> buscarEdicao(String slugCompeticao, String labelTemporada) {
         return temporadaService.buscarPorLabel(labelTemporada)
                 .map(TemporadaResumo::id)

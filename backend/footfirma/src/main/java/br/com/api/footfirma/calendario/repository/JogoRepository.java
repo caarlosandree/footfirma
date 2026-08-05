@@ -12,7 +12,7 @@ public interface JogoRepository extends JpaRepository<Jogo, Long> {
 
     List<Jogo> findByConfrontoIdOrderByOrdemNoConfrontoAsc(Long confrontoId);
 
-    List<Jogo> findByRodadaFaseIdOrderByDataJogoAsc(Long faseId);
+    List<Jogo> findByRodadaIdOrderByDataJogoAsc(Long rodadaId);
 
     /**
      * As datas já ocupadas por um clube nas fases dadas. É o que o alocador consulta para

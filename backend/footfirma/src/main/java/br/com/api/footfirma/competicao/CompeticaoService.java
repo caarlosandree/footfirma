@@ -63,4 +63,10 @@ public interface CompeticaoService {
      * só é alcançável por slug e temporada — e quem gera calendário tem o id.
      */
     Optional<JanelaDaEdicao> buscarJanelaDaEdicao(long edicaoId);
+
+    /** Uma fase por id, com as mesmas regras de desempate que {@code listarFasesDaEdicao}. */
+    Optional<FaseResumo> buscarFase(long faseId);
+
+    /** Os ids das edições disputadas numa temporada, em qualquer competição. */
+    List<Long> listarEdicoesDaTemporada(long temporadaId);
 }
