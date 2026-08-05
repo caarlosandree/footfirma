@@ -19,6 +19,17 @@ public interface ClubeService {
 
     Optional<ClubeResumo> resolverPorAlias(String alias);
 
+    /**
+     * O estádio onde o clube manda, por id.
+     *
+     * <p>{@code ClubeDetalhe} já traz o estádio, mas só é alcançável por slug — e quem
+     * grava {@code jogo.estadio_id} tem o id do clube, vindo da lista de participantes.
+     *
+     * <p>Devolve vazio quando o clube não existe ou não tem estádio: {@code clube.estadio_id}
+     * é anulável desde a V2.
+     */
+    Optional<Long> buscarEstadioPorClubeId(long clubeId);
+
     /** Upsert por {@code (nome, cidade)} — a chave natural criada em V14. */
     ResultadoDeSincronizacao sincronizarEstadio(DadosDeEstadio dados);
 

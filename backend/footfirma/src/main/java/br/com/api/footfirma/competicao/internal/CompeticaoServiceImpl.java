@@ -16,6 +16,8 @@ import br.com.api.footfirma.competicao.dto.DadosDeFase;
 import br.com.api.footfirma.competicao.dto.DadosDeParticipante;
 import br.com.api.footfirma.competicao.dto.DadosDeRegra;
 import br.com.api.footfirma.competicao.dto.EdicaoDetalhe;
+import br.com.api.footfirma.competicao.dto.FaseResumo;
+import br.com.api.footfirma.competicao.dto.JanelaDaEdicao;
 import br.com.api.footfirma.competicao.mapper.CompeticaoMapper;
 import br.com.api.footfirma.competicao.repository.CompeticaoRepository;
 import br.com.api.footfirma.competicao.repository.EdicaoParticipanteRepository;
@@ -48,6 +50,29 @@ class CompeticaoServiceImpl implements CompeticaoService {
     @Override
     public List<CompeticaoResumo> listarPorPais(String isoPais) {
         return competicaoMapper.paraResumos(competicaoRepository.findByPaisIso(isoPais));
+    }
+
+    @Override
+    public List<FaseResumo> listarFasesDaEdicao(long edicaoId) {
+        return edicaoRepository.findById(edicaoId)
+                .map(edicao -> competicaoMapper.paraFases(edicao.getFases()))
+                .orElseGet(List::of);
+    }
+
+    @Override
+    public List<Long> listarParticipantesDaFase(long faseId) {
+        return faseRepository.findById(faseId)
+                .map(fase -> edicaoParticipanteRepository
+                        .findByEdicaoIdOrderByClubeIdAsc(fase.getEdicao().getId()).stream()
+                        .map(EdicaoParticipante::getClubeId)
+                        .toList())
+                .orElseGet(List::of);
+    }
+
+    @Override
+    public Optional<JanelaDaEdicao> buscarJanelaDaEdicao(long edicaoId) {
+        return edicaoRepository.findById(edicaoId)
+                .map(edicao -> new JanelaDaEdicao(edicao.getDataInicio(), edicao.getDataFim()));
     }
 
     @Override
