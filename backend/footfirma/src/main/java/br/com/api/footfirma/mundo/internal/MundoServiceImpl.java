@@ -1,6 +1,8 @@
 package br.com.api.footfirma.mundo.internal;
 
 import br.com.api.footfirma.avaliacao.AvaliacaoService;
+import br.com.api.footfirma.calendario.CalendarioService;
+import br.com.api.footfirma.calendario.dto.EdicaoParaGerar;
 import br.com.api.footfirma.clube.ClubeService;
 import br.com.api.footfirma.clube.dto.DadosDeClube;
 import br.com.api.footfirma.clube.dto.DadosDeEstadio;
@@ -53,6 +55,7 @@ class MundoServiceImpl implements MundoService {
     private final ClubeService clubeService;
     private final JogadorService jogadorService;
     private final AvaliacaoService avaliacaoService;
+    private final CalendarioService calendarioService;
     private final TaticaService taticaService;
     private final GeografiaService geografiaService;
     private final PropriedadesDeMundo propriedades;
@@ -87,6 +90,7 @@ class MundoServiceImpl implements MundoService {
         var idsPorSlug = new HashMap<String, Long>();
         var clubes = criarClubes(paisId, idsPorSlug, contagens);
         vincularParticipantes(clubes, idsPorSlug, edicaoPorDivisao, contagens);
+        gerarCalendario(edicaoPorDivisao, temporadaId, contagens);
         criarElencos(clubes, idsPorSlug, temporadaId, paisId, contagens);
 
         var materializacao = avaliacaoService.materializar(TEMPORADA);
@@ -221,6 +225,25 @@ class MundoServiceImpl implements MundoService {
                 jogador.categoria(), jogador.numeroCamisa(),
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 valorDeMercado(jogador)));
+    }
+
+    /**
+     * Gera o calendário das duas ligas.
+     *
+     * <p>Entra logo depois dos participantes porque é deles que o gerador precisa, e não
+     * depende de overall nem de plano — ao contrário da escalação, que fecha a geração.
+     *
+     * <p>A precedência põe a primeira divisão antes da segunda. Ela é argumento, e não a
+     * ordem das linhas aqui: quem gera primeiro ocupa os melhores dias, e quando uma copa
+     * entrar ninguém vai lembrar dessa dependência lendo este método.
+     */
+    private void gerarCalendario(Map<Integer, Long> edicaoPorDivisao, Long temporadaId,
+                                 List<ContagemPorEntidade> contagens) {
+        var relatorio = calendarioService.gerarTemporada(temporadaId, propriedades.semente(),
+                List.of(new EdicaoParaGerar(edicaoPorDivisao.get(1), 1, PerfisDeLiga.PRIMEIRA),
+                        new EdicaoParaGerar(edicaoPorDivisao.get(2), 2, PerfisDeLiga.SEGUNDA)));
+        contagens.add(new ContagemPorEntidade("rodada", relatorio.rodadas(), 0));
+        contagens.add(new ContagemPorEntidade("jogo", relatorio.jogos(), 0));
     }
 
     /**

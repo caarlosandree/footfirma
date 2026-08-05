@@ -40,7 +40,15 @@ class RegistroDeResultadoTest {
         cenario = factory.criar("resultado", 4, "PONTOS_CORRIDOS", 1);
         calendarioService.gerarTemporada(cenario.temporadaId(), 7L,
                 List.of(new EdicaoParaGerar(cenario.edicaoId(), 1, CalendarioFactory.PERFIL)));
-        jogoIds = jdbcTemplate.queryForList("select id from jogo order by id", Long.class);
+        // Filtrado pela fase do cenário, e não "todos os jogos do banco": a suíte
+        // compartilha o container, e sem o filtro estes testes agiriam sobre jogos criados
+        // por outra classe — com outras regras de desempate.
+        jogoIds = jdbcTemplate.queryForList("""
+                select j.id from jogo j
+                join rodada r on r.id = j.rodada_id
+                where r.fase_id = ?
+                order by j.id
+                """, Long.class, cenario.faseId());
     }
 
     @Test
@@ -86,9 +94,10 @@ class RegistroDeResultadoTest {
     void naoDeveResolverConfrontoEmPontosCorridos() {
         calendarioService.registrarResultado(jogoIds.get(4), ResultadoDoJogo.noTempoNormal(3, 0));
 
-        assertThat(jdbcTemplate.queryForObject(
-                "select count(*) from confronto where vencedor_clube_id is not null",
-                Integer.class)).isZero();
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from confronto
+                where fase_id = ? and vencedor_clube_id is not null
+                """, Integer.class, cenario.faseId())).isZero();
     }
 
     @Test

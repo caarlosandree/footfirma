@@ -189,18 +189,20 @@ Status: verificado em 2026-08-05.
 
 **Os dois lados estão em estágios muito diferentes.**
 
-O **backend** saiu do scaffold. Tem nove módulos de domínio (`temporada`, `geografia`,
-`clube`, `jogador`, `competicao`, `avaliacao`, `mundo`, `treinador`, `tatica`), mais
-`config` e `shared` como módulos abertos, vinte e uma migrations Flyway e uma suíte de
-331 testes em 55 classes. A API é read-only em `/api/v1/clubes`, `/jogadores`, `/competicoes`,
-`/jogadores/{slug}/overall` e `/rankings`. Aqui já existem exemplos prontos: ao criar
-um módulo novo, copie o formato de um existente em vez de partir do zero.
+O **backend** saiu do scaffold. Tem dez módulos de domínio (`temporada`, `geografia`,
+`clube`, `jogador`, `competicao`, `avaliacao`, `mundo`, `treinador`, `tatica`,
+`calendario`), mais `config` e `shared` como módulos abertos, vinte e duas migrations
+Flyway e uma suíte de 408 testes em 65 classes. A API é read-only em `/api/v1/clubes`,
+`/jogadores`, `/competicoes`, `/jogadores/{slug}/overall`, `/rankings`,
+`/competicoes/{slug}/edicoes/{temporada}/rodadas` e `/clubes/{slug}/jogos`. Aqui já
+existem exemplos prontos: ao criar um módulo novo, copie o formato de um existente em vez
+de partir do zero.
 
 O banco tem o schema completo e os seeds de país, estado, posição, característica e
 perfis de peso. Em base zerada continua **vazio de clubes e jogadores** — os endpoints
 respondem lista vazia e 404, e isso é esperado. Rodar o gerador sob o profile `mundo`
 popula duas ligas nacionais fictícias com 40 clubes, 1.520 jogadores, 13.680 linhas
-de overall e um plano tático vigente por clube, escalado automaticamente. **Nada aqui é real além da geografia**: clubes, estádios e jogadores são
+de overall, um plano tático vigente por clube e 760 jogos datados em 76 rodadas. **Nada aqui é real além da geografia**: clubes, estádios e jogadores são
 inventados; cidade e UF saem do seed. O mundo é balanceado por seis arquétipos de
 clube, de modo que time pobre tenha base forte e gigante endividado decaia. Ver
 `backend/footfirma/docs/runbooks/mundo.md`.
@@ -218,9 +220,15 @@ importador existia para desconfiar de dado externo que não existe mais. Ver
 
 O caminho até a partida foi fatiado em três camadas, e duas estão feitas: `treinador`
 (quem decide) e `tatica` (o que ele decide — plano versionado, cinco instruções, onze,
-banco, capitão e escalador automático determinístico). Falta a camada 3, **partida** —
-e antes dela calendário e rodada, que `competicao` não tem: hoje ele vai só até
-`Competicao → Edicao → Fase → EdicaoParticipante`, sem tabela de jogos.
+banco, capitão e escalador automático determinístico). Falta a camada 3, **partida**.
+
+O que faltava antes dela — calendário e rodada — está entregue em `calendario`, um módulo
+próprio: rodada, confronto e jogo, com data e mando atribuídos por gerador determinístico
+que respeita descanso mínimo por clube. Só **pontos corridos** está implementado; o schema
+de grupos e eliminatória existe desde a `V22` e não tem gerador ainda (`gerarTemporada`
+falha alto nesses tipos). Registro de resultado e resolução de confronto existem; a
+propagação do chaveamento é o que falta. Ver
+`docs/superpowers/specs/2026-08-05-calendario-rodada-design.md` e o plano irmão.
 
 Duas dívidas conhecidas, ambas sem spec escrito. A **progressão entre temporadas**:
 hoje o mundo tem uma temporada só (2026), o versionamento por temporada que o schema

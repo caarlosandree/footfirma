@@ -41,35 +41,40 @@ class GeracaoDePontosCorridosTest {
 
     @Test
     void deveCriarTrintaEOitoRodadasETrezentosEOitentaJogos() {
-        assertThat(contar("rodada")).isEqualTo(38);
-        assertThat(contar("confronto")).isEqualTo(380);
-        assertThat(contar("jogo")).isEqualTo(380);
+        assertThat(contarDaFase("rodada r", "r.fase_id")).isEqualTo(38);
+        assertThat(contarDaFase("confronto c", "c.fase_id")).isEqualTo(380);
+        assertThat(contarJogos("")).isEqualTo(380);
     }
 
     @Test
     void deveDarUmJogoPorConfrontoEmPontosCorridos() {
         var fora = jdbcTemplate.queryForObject("""
                 select count(*) from (
-                    select confronto_id, count(*) as jogos from jogo group by confronto_id
+                    select j.confronto_id, count(*) as jogos from jogo j
+                    join rodada r on r.id = j.rodada_id
+                    where r.fase_id = ?
+                    group by j.confronto_id
                 ) c where jogos <> 1
-                """, Integer.class);
+                """, Integer.class, cenario.faseId());
         assertThat(fora).isZero();
     }
 
     @Test
     void naoDeveMarcarNenhumJogoNaSexta() {
-        var sextas = jdbcTemplate.queryForObject(
-                "select count(*) from jogo where extract(dow from data_jogo) = 5", Integer.class);
-        assertThat(sextas).isZero();
+        assertThat(contarJogos("and extract(dow from j.data_jogo) = 5")).isZero();
     }
 
     @Test
     void deveRespeitarODescansoMinimoDeTodoClube() {
         var violacoes = jdbcTemplate.queryForObject("""
-                with agenda as (
-                    select mandante_id as clube_id, data_jogo from jogo
+                with meus as (
+                    select j.* from jogo j join rodada r on r.id = j.rodada_id
+                    where r.fase_id = ?
+                ),
+                agenda as (
+                    select mandante_id as clube_id, data_jogo from meus
                     union all
-                    select visitante_id, data_jogo from jogo
+                    select visitante_id, data_jogo from meus
                 ),
                 consecutivos as (
                     select clube_id, data_jogo,
@@ -78,7 +83,7 @@ class GeracaoDePontosCorridosTest {
                 )
                 select count(*) from consecutivos
                 where anterior is not null and data_jogo - anterior < 3
-                """, Integer.class);
+                """, Integer.class, cenario.faseId());
         assertThat(violacoes).isZero();
     }
 
@@ -87,51 +92,54 @@ class GeracaoDePontosCorridosTest {
         var repetidos = jdbcTemplate.queryForObject("""
                 select count(*) from (
                     select j.rodada_id, c.clube_id from jogo j
+                    join rodada r on r.id = j.rodada_id
                     cross join lateral (values (j.mandante_id), (j.visitante_id)) as c(clube_id)
+                    where r.fase_id = ?
                     group by j.rodada_id, c.clube_id having count(*) > 1
-                ) r
-                """, Integer.class);
+                ) x
+                """, Integer.class, cenario.faseId());
         assertThat(repetidos).isZero();
     }
 
     @Test
     void deveDarMandanteVisitanteEstadioEDataATodoJogo() {
-        var incompletos = jdbcTemplate.queryForObject("""
-                select count(*) from jogo
-                where mandante_id is null or visitante_id is null
-                   or estadio_id is null or data_jogo is null
-                """, Integer.class);
-        assertThat(incompletos).isZero();
+        assertThat(contarJogos("""
+                and (j.mandante_id is null or j.visitante_id is null
+                  or j.estadio_id is null or j.data_jogo is null)
+                """)).isZero();
     }
 
     @Test
     void deveDeixarVencedorNuloEmPontosCorridos() {
-        assertThat(jdbcTemplate.queryForObject(
-                "select count(*) from confronto where vencedor_clube_id is not null",
-                Integer.class)).isZero();
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from confronto
+                where fase_id = ? and vencedor_clube_id is not null
+                """, Integer.class, cenario.faseId())).isZero();
     }
 
     @Test
     void deveFazerTodoClubeJogarTrintaEOitoVezes() {
         var fora = jdbcTemplate.queryForObject("""
+                with meus as (
+                    select j.* from jogo j join rodada r on r.id = j.rodada_id
+                    where r.fase_id = ?
+                )
                 select count(*) from (
                     select clube_id, count(*) as jogos from (
-                        select mandante_id as clube_id from jogo
+                        select mandante_id as clube_id from meus
                         union all
-                        select visitante_id from jogo
+                        select visitante_id from meus
                     ) a group by clube_id
                 ) t where jogos <> 38
-                """, Integer.class);
+                """, Integer.class, cenario.faseId());
         assertThat(fora).isZero();
     }
 
     @Test
     void deveManterTodoJogoDentroDaJanelaDaEdicao() {
-        var fora = jdbcTemplate.queryForObject("""
-                select count(*) from jogo
-                where data_jogo < date '2026-04-01' or data_jogo > date '2026-12-20'
-                """, Integer.class);
-        assertThat(fora).isZero();
+        assertThat(contarJogos(
+                "and (j.data_jogo < date '2026-04-01' or j.data_jogo > date '2026-12-20')"))
+                .isZero();
     }
 
     @Test
@@ -154,7 +162,24 @@ class GeracaoDePontosCorridosTest {
         assertThat(rodadas.getFirst().jogos()).hasSize(10);
     }
 
-    private int contar(String tabela) {
-        return jdbcTemplate.queryForObject("select count(*) from " + tabela, Integer.class);
+    /**
+     * Conta linhas da fase deste cenário, e não do banco inteiro.
+     *
+     * <p>A suíte compartilha o container e {@code MundoIntegridadeTest} roda com
+     * {@code recriar=true} — sem o filtro, o resultado destes testes dependeria da ordem
+     * em que as classes rodam.
+     */
+    private int contarDaFase(String tabelaComAlias, String colunaDaFase) {
+        return jdbcTemplate.queryForObject(
+                "select count(*) from %s where %s = ?".formatted(tabelaComAlias, colunaDaFase),
+                Integer.class, cenario.faseId());
+    }
+
+    private int contarJogos(String filtroExtra) {
+        return jdbcTemplate.queryForObject("""
+                select count(*) from jogo j
+                join rodada r on r.id = j.rodada_id
+                where r.fase_id = ?
+                """ + filtroExtra, Integer.class, cenario.faseId());
     }
 }
