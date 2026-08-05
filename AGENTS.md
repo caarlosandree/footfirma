@@ -192,7 +192,7 @@ Status: verificado em 2026-08-05.
 O **backend** saiu do scaffold. Tem dez módulos de domínio (`temporada`, `geografia`,
 `clube`, `jogador`, `competicao`, `avaliacao`, `mundo`, `treinador`, `tatica`,
 `calendario`), mais `config` e `shared` como módulos abertos, vinte e duas migrations
-Flyway e uma suíte de 408 testes em 65 classes. A API é read-only em `/api/v1/clubes`,
+Flyway e uma suíte de 442 testes em 69 classes. A API é read-only em `/api/v1/clubes`,
 `/jogadores`, `/competicoes`, `/jogadores/{slug}/overall`, `/rankings`,
 `/competicoes/{slug}/edicoes/{temporada}/rodadas` e `/clubes/{slug}/jogos`. Aqui já
 existem exemplos prontos: ao criar um módulo novo, copie o formato de um existente em vez
