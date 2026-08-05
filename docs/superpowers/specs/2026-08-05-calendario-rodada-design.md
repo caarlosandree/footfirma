@@ -177,9 +177,14 @@ de `avaliacao` e `tatica`.
 
 ### Ajustes fora do módulo
 
-`CompeticaoService` precisa de um método que hoje não existe: listar as fases de uma
-edição com tipo e regras de desempate, e os participantes de cada uma. `EdicaoDetalhe` já
-traz fases, mas não os campos de desempate.
+`CompeticaoService` precisa de um método que hoje não existe: os participantes por fase,
+que `EdicaoDetalhe` não traz.
+
+Os campos de desempate quase todos já existem. `FaseResumo` traz `tipo`,
+`jogosPorConfronto`, `temProrrogacao` e `temPenaltis`; falta **apenas `temGolFora`**, que
+está na entidade `Fase` desde a `V1` e é justamente o que o `ResolvedorDeConfronto`
+precisa. O ajuste é acrescentar um campo ao record existente, não criar um DTO novo de
+desempate.
 
 `LimpezaDoCatalogo` ganha `jogo`, `confronto` e `rodada` **abrindo a lista**, antes de
 tudo. As três referenciam `clube`, `estadio` e `fase`. É o mesmo defeito que
@@ -192,8 +197,8 @@ quatro classes: sem elas ali, `footfirma.mundo.recriar=true` falha por chave est
 create table rodada (
     id            bigint  generated always as identity primary key,
     fase_id       bigint  not null references fase (id),
-    ordem         integer not null,
-    tipo          text    not null,
+    ordem         integer not null check (ordem > 0),
+    tipo          text    not null check (tipo in ('FIM_DE_SEMANA', 'MEIO_DE_SEMANA')),
     data_alvo     date    not null,
     janela_inicio date    not null,
     janela_fim    date    not null
@@ -220,6 +225,11 @@ create table confronto (
 
 create unique index uq_confronto_ordem on confronto (fase_id, ordem);
 
+-- A propagação do chaveamento busca confrontos por origem a cada confronto resolvido.
+-- FK usada em filtro tem índice; o Postgres não o cria sozinho.
+create index idx_confronto_origem_a on confronto (origem_lado_a) where origem_lado_a is not null;
+create index idx_confronto_origem_b on confronto (origem_lado_b) where origem_lado_b is not null;
+
 comment on column confronto.origem_lado_a is
     'Confronto que alimenta este lado. Nulo quando o clube veio do sorteio inicial';
 comment on column confronto.clube_a_id is
@@ -236,13 +246,16 @@ create table jogo (
     visitante_id        bigint  references clube (id),
     estadio_id          bigint  references estadio (id),
     data_jogo           date,
-    situacao            text    not null default 'AGENDADO',
-    gols_mandante             integer,
-    gols_visitante            integer,
-    gols_mandante_prorrogacao integer,
-    gols_visitante_prorrogacao integer,
-    penaltis_mandante         integer,
-    penaltis_visitante        integer
+    situacao            text    not null default 'AGENDADO'
+                        check (situacao in ('AGENDADO', 'ENCERRADO')),
+    gols_mandante             integer check (gols_mandante             >= 0),
+    gols_visitante            integer check (gols_visitante            >= 0),
+    gols_mandante_prorrogacao integer check (gols_mandante_prorrogacao >= 0),
+    gols_visitante_prorrogacao integer check (gols_visitante_prorrogacao >= 0),
+    penaltis_mandante         integer check (penaltis_mandante         >= 0),
+    penaltis_visitante        integer check (penaltis_visitante        >= 0),
+
+    constraint ck_jogo_clubes_distintos check (mandante_id <> visitante_id)
 );
 
 create unique index uq_jogo_ordem on jogo (confronto_id, ordem_no_confronto);
@@ -260,6 +273,21 @@ comment on column jogo.situacao is
 
 Os dois índices por clube e data existem para `listarAgendaDoClube`, que o gerador
 consulta uma vez por jogo alocado — 760 vezes numa temporada de duas ligas.
+
+**Por que `date` e não `timestamptz`.** A regra de banco pede `timestamptz` sempre, e é
+explícita sobre o motivo: é a regra de **data e hora**. O gerador aloca por dia, e horário
+de jogo não existe neste spec — nem como conceito, nem como coluna. `timestamptz` num
+campo sem hora obrigaria a inventar uma meia-noite arbitrária e traria discussão de fuso
+para um dado que não tem instante. Quando houver horário de jogo, ele entra como coluna
+própria com `timestamptz`, e essa decisão se reabre com um caso concreto.
+
+**A auto-FK de `confronto` é problema para a limpeza.** `origem_lado_a`/`origem_lado_b`
+apontam para a própria tabela, e `LimpezaDoCatalogo` apaga com um `delete` linear por
+tabela. Numa eliminatória, confrontos de fase posterior referenciam os de fase anterior:
+um `delete from confronto` sem ordem viola a auto-FK. O plano precisa escolher entre
+`on delete cascade` na auto-referência e apagar por fase em ordem decrescente. É o mesmo
+tipo de defeito que `plano_tatico` produziu em 2026-08-05 — e desta vez está previsto
+antes de morder.
 
 ### O módulo `calendario`
 
@@ -332,6 +360,11 @@ seguinte se acomoda no que sobrou. É o preço da geração incremental, e é o 
 acrescentar uma copa sem refazer as ligas. Com as duas ligas atuais o efeito é nulo:
 nenhum clube está nas duas.
 
+O que **não** pode ficar implícito é que a ordem das chamadas em `mundo` determina o
+calendário. Quando a copa entrar, ninguém vai lembrar disso lendo o gerador. O plano deve
+tornar a precedência um argumento de `gerarParaEdicao` — divisão mais alta primeiro, copa
+depois —, para que a dependência saia da ordem das linhas e vire contrato verificável.
+
 ### Registrar resultado
 
 `registrarResultado(jogoId, ResultadoDoJogo)` grava o placar e marca `situacao =
@@ -365,9 +398,13 @@ tipo interno de módulo de domínio:
 Dois endpoints de leitura, sob o ADR de catálogo read-only:
 
 ```
-GET /api/v1/edicoes/{slugCompeticao}/{temporada}/rodadas
+GET /api/v1/competicoes/{slug}/edicoes/{temporada}/rodadas
 GET /api/v1/clubes/{slug}/jogos
 ```
+
+O primeiro estende o path que `CompeticaoController` já expõe
+(`/{slug}/edicoes/{temporada}`) em vez de abrir `/edicoes` como recurso raiz — rodada é
+subrecurso da edição, e a edição só existe dentro de uma competição.
 
 Sem escrita. `registrarResultado` é porta de módulo, não endpoint: quem a chama é
 `partida`, e não há autenticação para autorizar um humano a gravar placar.
@@ -421,6 +458,11 @@ chamá-lo.
 
 Mitigação possível no plano: fatiar a entrega em pontos corridos primeiro, com grupos e
 eliminatória em seguida, mantendo o schema desenhado inteiro desde a `V22`.
+
+Se fatiar, o teste de integridade da eliminatória — 8 clubes, 7 confrontos, propagação até
+a final — entra no **slice da eliminatória**, não no de pontos corridos. Ele é a única
+coisa que prova que a metade complexa funciona; deixá-lo para trás faria a fatia nascer
+sem a sua própria verificação.
 
 **3. Guloso na alocação.** O alocador escolhe dia por dia, sem retroceder. Como o
 escalador de `tatica`, ele erra onde uma busca completa acertaria. Com 38 rodadas e uma
