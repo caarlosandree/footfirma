@@ -144,15 +144,18 @@ vai depender.
 
 ### Ajuste fora do módulo
 
-`TreinadorService` hoje só sabe buscar por slug. O escalador precisa de "quem dirige o
-clube X nesta temporada", então a porta pública do `treinador` ganha:
+`TreinadorService` já expõe seis métodos — `buscarPorSlug`, `criar`, `distribuirPontos`,
+`listarPropostasAbertas`, `aceitarProposta`, `recusarProposta` —, mas nenhum deles parte
+do clube. O escalador precisa de "quem dirige o clube X nesta temporada", então a porta
+pública do `treinador` ganha:
 
 ```java
 Optional<TreinadorDetalhe> buscarPorClube(long clubeId, long temporadaId);
 ```
 
-É acréscimo, não alteração — `vinculo_treinador` já tem os dados e o índice. Mas é
-mexer num módulo recém-mergeado, e precisa estar explícito no plano.
+É acréscimo, não alteração — `vinculo_treinador` já tem os dados e o índice, e
+`Optional` é o retorno que `buscarPorSlug` já usa, então a porta não fica com dois
+estilos. Mas é mexer num módulo recém-mergeado, e precisa estar explícito no plano.
 
 ### Schema — migrations `V20` e `V21`
 
@@ -221,7 +224,8 @@ create table plano_escalacao (
     papel              text    not null check (papel in ('TITULAR', 'RESERVA')),
     slot_ordem         integer check (slot_ordem  between 1 and 11),
     ordem_banco        integer check (ordem_banco between 1 and 12),
-    aptidao_no_momento numeric(4,2) not null check (aptidao_no_momento between 0 and 99),
+    posicao_id         bigint  not null references posicao (id),
+    aptidao_no_momento integer not null check (aptidao_no_momento between 0 and 99),
     primary key (plano_id, jogador_id),
     constraint ck_papel_coerente check (
         (papel = 'TITULAR' and slot_ordem is not null and ordem_banco is null) or
@@ -232,11 +236,32 @@ create table plano_escalacao (
 create unique index uq_escalacao_slot on plano_escalacao (plano_id, slot_ordem)
     where slot_ordem is not null;
 
+create unique index uq_escalacao_banco on plano_escalacao (plano_id, ordem_banco)
+    where ordem_banco is not null;
+
 create index idx_plano_escalacao_jogador on plano_escalacao (jogador_id);
 
+comment on column plano_escalacao.posicao_id is
+    'Em que posição o jogador foi escalado. Do slot da formação, se titular; de jogador.posicao_principal_id, se reserva. Gravada e nunca inferida: é a base do congelamento e do recálculo';
 comment on column plano_escalacao.aptidao_no_momento is
-    'Overall do jogador na posição do slot, congelado na gravação. O valor atual vem do join com jogador_overall na leitura';
+    'Overall do jogador em posicao_id, congelado na gravação. O valor atual vem do join com jogador_overall na leitura';
 ```
+
+`aptidao_no_momento` é `integer` porque a fonte é `integer`: `jogador_overall.overall`
+tem `check (overall between 0 and 99)`. Congelar um inteiro num `numeric(4,2)`
+prometeria casas decimais que ninguém produz.
+
+`posicao_id` existe porque o congelamento precisa ser autodescritivo. Para o titular a
+posição é derivável do `formacao_slot`; para o reserva, de `jogador.posicao_principal_id`
+— mas derivar tem dois problemas. A formação do plano pode mudar na versão seguinte, e
+`posicao_principal_id` é coluna mutável de `jogador`: em ambos os casos, a base do
+número congelado se moveria depois de gravado, e `aptidaoAtual` passaria a ser calculada
+sobre uma posição diferente da que gerou `aptidaoNoMomento`. Os dois campos da decisão 5
+só são comparáveis se olharem a mesma posição, e é esta coluna que garante isso.
+
+`uq_escalacao_banco` é o par de `uq_escalacao_slot`. Sem ele, dois reservas com
+`ordem_banco = 3` passam, e o DTO de leitura entrega um banco cuja ordem não é
+determinística. Pela decisão 3, invariante que o banco consegue segurar fica no banco.
 
 Os cinco eixos são `text` com `check`, o formato que `tipo`, `origem` e `pe_preferido`
 já usam.
@@ -257,7 +282,11 @@ Nenhuma cabe num `check` de linha, porque nenhuma enxerga as outras linhas do ag
 - exatamente um goleiro entre os titulares
 - todo escalado tem `jogador_vinculo` naquele clube e temporada
 - capitão, quando informado, é um dos 11 titulares — a coluna é anulável
-- banco entre 5 e 12
+- banco entre 5 e 12, com as ordens de 1 a N sem saltos
+
+A unicidade da ordem do banco não está nesta lista: `uq_escalacao_banco` a segura no
+banco. O que sobra aqui é a continuidade — que as ordens formem `1..N` sem buracos —,
+e essa o índice não alcança.
 
 `TaticaServiceImpl` é o único caminho de escrita, pelo mesmo motivo que
 `TreinadorServiceImpl` é o único da soma das skills. `EscalacaoInvalidaTest` prova que
@@ -292,7 +321,8 @@ desempatando pela `formacao.ordem`.
 ainda vazio, calcular a diferença entre a melhor e a segunda melhor aptidão entre os
 jogadores disponíveis; preencher primeiro o slot de maior diferença. Desempate por
 `jogador.id`. Vínculos `categoria = 'BASE'` só entram se os profissionais não fecharem
-o onze.
+o onze — e `PROFISSIONAL` é o default da coluna, então o filtro exclui a minoria, não a
+maioria.
 
 Não é ótimo — o guloso erra onde a atribuição húngara acertaria. A troca é aceita: com
 ~30 jogadores e 11 slots o erro é raro e pequeno, e a regra cabe em duas frases num
@@ -307,8 +337,9 @@ alta e campo aberto; defensivo com o oposto.
 Poderia sair de `LIDERANCA` ou da afinidade com o treinador, mas ambas são calibragem
 contra um motor que não existe — e a braçadeira, hoje, não modifica nada.
 
-**Banco:** os melhores restantes por aptidão na posição principal, sempre com ao menos
-um goleiro.
+**Banco:** os melhores restantes pelo overall em `jogador.posicao_principal_id`, sempre
+com ao menos um goleiro. É essa posição que vai para `plano_escalacao.posicao_id` das
+linhas de reserva, e é sobre ela que a aptidão do reserva é congelada e recalculada.
 
 ### O contrato que a partida vai consumir
 
@@ -364,7 +395,7 @@ antes de existir quem transfira.
 
 | Teste | Afirma |
 |---|---|
-| `EscolhaDeFormacaoTest` | repertório cresce com `TATICA`; skill 1 avalia só a primeira formação; skill 10 avalia as seis; empate resolve por `formacao.ordem` |
+| `EscolhaDeFormacaoTest` | o repertório nos seis limiares de `1 + TATICA/2` com divisão inteira — skills 1, 3, 5, 7, 9 e 10 dando 1, 2, 3, 4, 5 e 6 formações; empate resolve por `formacao.ordem` |
 | `PreenchimentoDeSlotsTest` | o guloso preenche antes o slot mais escasso; desempate por `jogador.id`; `BASE` só entra quando os profissionais não fecham o onze |
 | `InstrucoesDaIaTest` | mentalidade sai da reputação relativa à média global; os outros quatro eixos são coerentes com ela — nunca ofensivo com linha recuada; capitão é o titular de maior aptidão |
 
@@ -372,8 +403,8 @@ antes de existir quem transfira.
 
 | Teste | Afirma |
 |---|---|
-| `PlanoIntegridadeTest` | segundo plano vigente no mesmo clube e temporada é rejeitado **pelo banco**; titular sem slot e reserva com slot idem; dois titulares no mesmo slot idem |
-| `EscalacaoInvalidaTest` | 10 titulares, dois goleiros, jogador de outro clube e capitão no banco são rejeitados **pelo serviço** — o banco sozinho aceita os quatro |
+| `PlanoIntegridadeTest` | segundo plano vigente no mesmo clube e temporada é rejeitado **pelo banco**; titular sem slot e reserva com slot idem; dois titulares no mesmo slot idem; dois reservas na mesma `ordem_banco` idem |
+| `EscalacaoInvalidaTest` | 10 titulares, dois goleiros, jogador de outro clube, capitão no banco e banco com buraco na ordem são rejeitados **pelo serviço** — o banco sozinho aceita os cinco |
 | `VersionamentoTest` | salvar duas vezes gera versões 1 e 2; só a 2 é vigente; a 1 preserva a aptidão congelada e as linhas de escalação |
 | `CatalogoDeFormacaoTest` | cada uma das seis formações seedadas tem 11 slots e exatamente um `GOL` |
 | `ModularidadeTest` (existente) | `tatica` não alcança tipo `internal` de outro módulo |
@@ -383,10 +414,11 @@ antes de existir quem transfira.
 | Teste | Afirma |
 |---|---|
 | `EscaladorDeterministicoTest` | mesmo elenco e mesma skill, duas execuções, mesmo onze e mesmas instruções |
-| `AptidaoCongeladaTest` | alterar `jogador_overall` e reler o plano: `aptidaoNoMomento` inalterada, `aptidaoAtual` acompanha |
+| `AptidaoCongeladaTest` | alterar `jogador_overall` e reler o plano: `aptidaoNoMomento` inalterada, `aptidaoAtual` acompanha; alterar `jogador.posicao_principal_id` de um reserva não move nenhuma das duas |
 
-`AptidaoCongeladaTest` é o par do `CongelamentoTest` do treinador, e falha se alguém,
-por simplificação, colapsar os dois campos em um.
+`AptidaoCongeladaTest` é o par do `CongelamentoTest` do treinador, e falha em duas
+simplificações: colapsar os dois campos em um, e derivar a posição do reserva na leitura
+em vez de ler `plano_escalacao.posicao_id`.
 
 ### O que não é testado
 
