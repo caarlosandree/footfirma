@@ -214,7 +214,7 @@ comment on column rodada.data_alvo is
 create table confronto (
     id                bigint generated always as identity primary key,
     fase_id           bigint  not null references fase (id),
-    ordem             integer not null,
+    ordem             integer not null check (ordem > 0),
     chave             text,
     origem_lado_a     bigint  references confronto (id),
     origem_lado_b     bigint  references confronto (id),
@@ -241,7 +241,7 @@ create table jogo (
     id                  bigint generated always as identity primary key,
     confronto_id        bigint  not null references confronto (id),
     rodada_id           bigint  not null references rodada (id),
-    ordem_no_confronto  integer not null,
+    ordem_no_confronto  integer not null check (ordem_no_confronto between 1 and 2),
     mandante_id         bigint  references clube (id),
     visitante_id        bigint  references clube (id),
     estadio_id          bigint  references estadio (id),
@@ -269,6 +269,10 @@ comment on column jogo.data_jogo is
     'Provisória enquanto o confronto não tem os dois clubes. Realocada pela regra de descanso quando eles se definem (decisão 7)';
 comment on column jogo.situacao is
     'AGENDADO ou ENCERRADO. Não há ADIADO: jogo fora da janela da rodada é apenas um jogo em outro dia, e ninguém o adia por decisão externa neste sistema';
+comment on column jogo.ordem_no_confronto is
+    '1 ou 2, conforme fase.jogos_por_confronto. A faixa é o domínio de hoje: confronto de três jogos exigiria migration, e é essa a intenção — que a mudança seja deliberada';
+comment on constraint ck_jogo_clubes_distintos on jogo is
+    'Bloqueia clube contra si mesmo. Passa de propósito quando um dos lados é nulo: em eliminatória o jogo nasce sem clubes, e no Postgres null <> null é null, que o check trata como aprovado. Não é falha da constraint — é o caso pré-classificação sendo aceito';
 ```
 
 Os dois índices por clube e data existem para `listarAgendaDoClube`, que o gerador
