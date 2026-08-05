@@ -23,4 +23,12 @@ final class ConstantesDeCalendario {
 
     /** Teto de dias que um jogo pode ser empurrado além da janela antes de falhar. */
     static final int DESLOCAMENTO_MAXIMO_EM_DIAS = 21;
+
+    /**
+     * Quantos clubes por grupo numa fase de grupos.
+     *
+     * <p>Mora aqui e não em {@code Fase} porque nenhuma competição do mundo gerado usa
+     * grupos. Quando uma usar, isto vira coluna e esta constante some.
+     */
+    static final int CLUBES_POR_GRUPO = 4;
 }

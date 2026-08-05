@@ -95,11 +95,12 @@ class CalendarioServiceImpl implements CalendarioService {
         return switch (fase.tipo()) {
             case "PONTOS_CORRIDOS" -> gerarPontosCorridos(
                     edicao, fase, participantes, inicio, diasDaJanela, aleatorio, agenda);
-            // Grupos e eliminatória chegam no slice B. Falhar alto é melhor do que gerar
-            // silenciosamente uma fase vazia que ninguém vai notar até a partida procurar
-            // um jogo que não existe.
+            case "GRUPOS" -> gerarGrupos(
+                    edicao, fase, participantes, inicio, diasDaJanela, aleatorio, agenda);
+            case "ELIMINATORIA" -> gerarEliminatoria(
+                    edicao, fase, participantes, inicio, diasDaJanela, aleatorio, agenda);
             default -> throw new CalendarioInvalidoException(
-                    "Tipo de fase ainda não gerado: " + fase.tipo());
+                    "Tipo de fase desconhecido: " + fase.tipo());
         };
     }
 
@@ -146,6 +147,186 @@ class CalendarioServiceImpl implements CalendarioService {
             }
         }
         return new Contagem(tabela.size(), confrontosCriados, jogosCriados);
+    }
+
+    /**
+     * Grupos: os participantes são distribuídos por sorteio e cada grupo roda o mesmo
+     * Berger, com as rodadas compartilhadas entre os grupos.
+     *
+     * <p>Compartilhar a rodada não é economia: na rodada 1 todos os grupos jogam, e gravar
+     * uma rodada por grupo daria à fase o dobro de rodadas que ela tem.
+     *
+     * <p>O número de grupos não está em {@code Fase} — quatro clubes por grupo é o padrão
+     * até que exista competição real com grupos e a coluna se pague.
+     */
+    private Contagem gerarGrupos(EdicaoParaGerar edicao, FaseResumo fase,
+                                 List<Long> participantes, java.time.LocalDate inicio,
+                                 int diasDaJanela, SplittableRandom aleatorio,
+                                 AgendaEmMemoria agenda) {
+        var porGrupo = ConstantesDeCalendario.CLUBES_POR_GRUPO;
+        if (participantes.size() % porGrupo != 0) {
+            throw new CalendarioInvalidoException(
+                    "%d participantes não dividem em grupos de %d"
+                            .formatted(participantes.size(), porGrupo));
+        }
+        var grupos = participantes.size() / porGrupo;
+        var sorteados = embaralharClubes(participantes, aleatorio);
+
+        var tabela = TabelaDeBerger.gerar(porGrupo, fase.jogosPorConfronto() == 2);
+        var tipos = TipadorDeRodadas.tipar(tabela.size(), diasDaJanela);
+        var alvos = TipadorDeRodadas.datasAlvo(inicio, tipos);
+
+        var confrontosCriados = 0;
+        var jogosCriados = 0;
+
+        for (var i = 0; i < tabela.size(); i++) {
+            var rodada = gravarRodada(fase.id(), i + 1, tipos.get(i), alvos.get(i));
+            var ordemDeDias = SorteadorDeDia.ordenarPorPeso(
+                    edicao.perfil().pesos().get(tipos.get(i)), aleatorio);
+
+            for (var grupo = 0; grupo < grupos; grupo++) {
+                var doGrupo = sorteados.subList(grupo * porGrupo, (grupo + 1) * porGrupo);
+                var chave = String.valueOf((char) ('A' + grupo));
+
+                for (var par : tabela.get(i)) {
+                    gravarConfrontoResolvido(fase, rodada, chave, ++confrontosCriados,
+                            doGrupo.get(par.mandante()), doGrupo.get(par.visitante()),
+                            ordemDeDias, edicao.perfil().descansoMinimoEmDias(), agenda);
+                    jogosCriados++;
+                }
+            }
+        }
+        return new Contagem(tabela.size(), confrontosCriados, jogosCriados);
+    }
+
+    /**
+     * Eliminatória: a árvore inteira nasce no sorteio, com as fases posteriores vazias.
+     *
+     * <p>Todos os jogos nascem datados, inclusive os de confronto sem clube — a data é
+     * provisória, e será realocada pela regra de descanso quando os dois lados chegarem.
+     * Sem data nenhuma, o calendário da temporada ficaria com buracos e não daria para
+     * dizer quando será a final.
+     */
+    private Contagem gerarEliminatoria(EdicaoParaGerar edicao, FaseResumo fase,
+                                       List<Long> participantes, java.time.LocalDate inicio,
+                                       int diasDaJanela, SplittableRandom aleatorio,
+                                       AgendaEmMemoria agenda) {
+        var chave = SorteioDeChaveamento.montar(participantes.size(), aleatorio);
+
+        // Uma rodada por fase da árvore, vezes os jogos de cada confronto: 8 clubes com
+        // ida e volta dão 3 fases × 2 = 6 rodadas.
+        var fasesDaArvore = Integer.numberOfTrailingZeros(participantes.size());
+        var totalDeRodadas = fasesDaArvore * fase.jogosPorConfronto();
+        var tipos = TipadorDeRodadas.tipar(totalDeRodadas, diasDaJanela);
+        var alvos = TipadorDeRodadas.datasAlvo(inicio, tipos);
+
+        var rodadasGravadas = new ArrayList<Rodada>(totalDeRodadas);
+        for (var i = 0; i < totalDeRodadas; i++) {
+            rodadasGravadas.add(gravarRodada(fase.id(), i + 1, tipos.get(i), alvos.get(i)));
+        }
+
+        var porOrdem = new HashMap<Integer, Confronto>();
+        var jogosCriados = 0;
+
+        for (var slot : chave) {
+            var confronto = new Confronto(fase.id(), slot.ordem(), null);
+            if (slot.ladoA() != null) {
+                confronto.setClubeAId(participantes.get(slot.ladoA()));
+                confronto.setClubeBId(participantes.get(slot.ladoB()));
+            } else {
+                confronto.setOrigemLadoA(porOrdem.get(slot.origemA()).getId());
+                confronto.setOrigemLadoB(porOrdem.get(slot.origemB()).getId());
+            }
+            confrontos.save(confronto);
+            porOrdem.put(slot.ordem(), confronto);
+
+            var faseDaArvore = faseDaArvoreDe(slot.ordem(), participantes.size());
+            for (var ordemNoConfronto = 1;
+                 ordemNoConfronto <= fase.jogosPorConfronto(); ordemNoConfronto++) {
+                var rodada = rodadasGravadas.get(
+                        faseDaArvore * fase.jogosPorConfronto() + ordemNoConfronto - 1);
+                gravarJogoDoChaveamento(confronto, rodada, ordemNoConfronto, edicao, aleatorio,
+                        agenda);
+                jogosCriados++;
+            }
+        }
+        return new Contagem(totalDeRodadas, chave.size(), jogosCriados);
+    }
+
+    /** Em que fase da árvore o confronto de ordem N está: 0 é a primeira, e cresce. */
+    private int faseDaArvoreDe(int ordem, int participantes) {
+        var restante = participantes / 2;
+        var acumulado = 0;
+        var faseDaArvore = 0;
+        while (ordem > acumulado + restante) {
+            acumulado += restante;
+            restante /= 2;
+            faseDaArvore++;
+        }
+        return faseDaArvore;
+    }
+
+    private void gravarJogoDoChaveamento(Confronto confronto, Rodada rodada, int ordemNoConfronto,
+                                         EdicaoParaGerar edicao, SplittableRandom aleatorio,
+                                         AgendaEmMemoria agenda) {
+        var jogo = new Jogo(confronto, rodada, ordemNoConfronto);
+
+        if (confronto.getClubeAId() != null && confronto.getClubeBId() != null) {
+            // Ida com A em casa, volta invertida.
+            var mandanteId = ordemNoConfronto == 1 ? confronto.getClubeAId() : confronto.getClubeBId();
+            var visitanteId = ordemNoConfronto == 1 ? confronto.getClubeBId() : confronto.getClubeAId();
+            var ordemDeDias = SorteadorDeDia.ordenarPorPeso(
+                    edicao.perfil().pesos().get(rodada.getTipo()), aleatorio);
+            var data = AlocadorDeDatas.alocar(
+                    rodada.getJanelaInicio(), rodada.getJanelaFim(), ordemDeDias,
+                    agenda.de(mandanteId), agenda.de(visitanteId),
+                    edicao.perfil().descansoMinimoEmDias());
+
+            jogo.setMandanteId(mandanteId);
+            jogo.setVisitanteId(visitanteId);
+            jogo.setEstadioId(estadioDe(mandanteId));
+            jogo.setDataJogo(data);
+            agenda.ocupar(mandanteId, data);
+            agenda.ocupar(visitanteId, data);
+        } else {
+            // Sem clubes ainda: só a data provisória do alvo da rodada.
+            jogo.setDataJogo(rodada.getDataAlvo());
+        }
+        jogos.save(jogo);
+    }
+
+    private void gravarConfrontoResolvido(FaseResumo fase, Rodada rodada, String chave, int ordem,
+                                          long mandanteId, long visitanteId,
+                                          List<java.time.DayOfWeek> ordemDeDias,
+                                          int descansoMinimo, AgendaEmMemoria agenda) {
+        var confronto = new Confronto(fase.id(), ordem, chave);
+        confronto.setClubeAId(mandanteId);
+        confronto.setClubeBId(visitanteId);
+        confrontos.save(confronto);
+
+        var data = AlocadorDeDatas.alocar(rodada.getJanelaInicio(), rodada.getJanelaFim(),
+                ordemDeDias, agenda.de(mandanteId), agenda.de(visitanteId), descansoMinimo);
+
+        var jogo = new Jogo(confronto, rodada, 1);
+        jogo.setMandanteId(mandanteId);
+        jogo.setVisitanteId(visitanteId);
+        jogo.setEstadioId(estadioDe(mandanteId));
+        jogo.setDataJogo(data);
+        jogos.save(jogo);
+
+        agenda.ocupar(mandanteId, data);
+        agenda.ocupar(visitanteId, data);
+    }
+
+    private List<Long> embaralharClubes(List<Long> participantes, SplittableRandom aleatorio) {
+        var lista = new ArrayList<>(participantes);
+        for (var i = lista.size() - 1; i > 0; i--) {
+            var j = aleatorio.nextInt(i + 1);
+            var troca = lista.get(i);
+            lista.set(i, lista.get(j));
+            lista.set(j, troca);
+        }
+        return lista;
     }
 
     private Rodada gravarRodada(Long faseId, int ordem,
