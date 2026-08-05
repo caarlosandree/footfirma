@@ -97,6 +97,52 @@ class MundoIntegridadeTest {
         assertThat(forasteiros).isZero();
     }
 
+    @Test
+    void deveDeixarTodoClubeComPlanoTaticoVigenteEEscalado() {
+        assertThat(contar("plano_tatico")).isEqualTo(40);
+        // 11 titulares e o banco cheio: com 38 jogadores no elenco a sobra passa do
+        // teto, então todo clube bate BANCO_MAXIMO.
+        assertThat(contar("plano_escalacao")).isEqualTo(40 * (11 + 12));
+
+        var fora = jdbcTemplate.queryForObject("""
+                select count(*) from (
+                    select p.id,
+                           count(*) filter (where e.slot_ordem  is not null) as titulares,
+                           count(*) filter (where e.ordem_banco is not null) as banco
+                    from plano_tatico p
+                    join plano_escalacao e on e.plano_id = p.id
+                    where p.vigente and p.versao = 1
+                      and p.origem = 'AUTOMATICO' and p.capitao_id is not null
+                    group by p.id
+                ) plano where titulares <> 11 or banco <> 12
+                """, Integer.class);
+        assertThat(fora).isZero();
+    }
+
+    @Test
+    void deveEscalarSomenteJogadoresDoProprioClube() {
+        var intrusos = jdbcTemplate.queryForObject("""
+                select count(*) from plano_tatico p
+                join plano_escalacao e on e.plano_id = p.id
+                left join jogador_vinculo v
+                       on v.jogador_id = e.jogador_id
+                      and v.clube_id = p.clube_id
+                      and v.temporada_id = p.temporada_id
+                where v.jogador_id is null
+                """, Integer.class);
+        assertThat(intrusos).isZero();
+    }
+
+    @Test
+    void deveCongelarAAptidaoDeTodoEscaladoComOOverallJaMaterializado() {
+        // O escalador roda depois de materializar, então nenhuma linha pode ter
+        // nascido com aptidão zero — seria a prova de que a ordem foi invertida.
+        var zerados = jdbcTemplate.queryForObject(
+                "select count(*) from plano_escalacao where aptidao_no_momento <= 0",
+                Integer.class);
+        assertThat(zerados).isZero();
+    }
+
     private int contar(String tabela) {
         return jdbcTemplate.queryForObject("select count(*) from " + tabela, Integer.class);
     }

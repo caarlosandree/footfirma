@@ -13,12 +13,18 @@ import java.util.List;
  * alternativa seria expor um método destrutivo na interface pública de cinco
  * módulos — superfície pior que esta lista.
  *
- * <p>País, estado, posição, característica e perfil de avaliação não são apagados:
- * são seed de migration, e o gerador depende deles.
+ * <p>País, estado, posição, característica, perfil de avaliação e o catálogo de
+ * formações não são apagados: são seed de migration, e o gerador depende deles.
+ *
+ * <p>{@code plano_escalacao} e {@code plano_tatico} abrem a lista porque referenciam
+ * {@code jogador} e {@code clube}. Sem elas aqui, apagar o catálogo falha por chave
+ * estrangeira assim que o primeiro plano existe.
  */
 final class LimpezaDoCatalogo {
 
     private static final List<String> TABELAS_EM_ORDEM = List.of(
+            "plano_escalacao",
+            "plano_tatico",
             "jogador_overall",
             "jogador_vinculo",
             "jogador_atributo",
