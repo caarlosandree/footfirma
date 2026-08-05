@@ -143,6 +143,67 @@ class MundoIntegridadeTest {
         assertThat(zerados).isZero();
     }
 
+    @Test
+    void deveGerarOCalendarioDasDuasLigas() {
+        // 20 clubes em turno e returno: 38 rodadas e 380 jogos por divisão.
+        assertThat(contar("rodada")).isEqualTo(76);
+        assertThat(contar("confronto")).isEqualTo(760);
+        assertThat(contar("jogo")).isEqualTo(760);
+    }
+
+    @Test
+    void naoDeveMarcarJogoNaSextaEmNenhumaDasDuasLigas() {
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from jogo where extract(dow from data_jogo) = 5",
+                Integer.class)).isZero();
+    }
+
+    @Test
+    void deveRespeitarODescansoDeTodoClubeNoMundoInteiro() {
+        var violacoes = jdbcTemplate.queryForObject("""
+                with agenda as (
+                    select mandante_id as clube_id, data_jogo from jogo
+                    union all
+                    select visitante_id, data_jogo from jogo
+                ),
+                consecutivos as (
+                    select clube_id, data_jogo,
+                           lag(data_jogo) over (partition by clube_id order by data_jogo) as anterior
+                    from agenda
+                )
+                select count(*) from consecutivos
+                where anterior is not null and data_jogo - anterior < 3
+                """, Integer.class);
+        assertThat(violacoes).isZero();
+    }
+
+    @Test
+    void deveFazerTodoClubeJogarTrintaEOitoVezes() {
+        var fora = jdbcTemplate.queryForObject("""
+                select count(*) from (
+                    select clube_id, count(*) as jogos from (
+                        select mandante_id as clube_id from jogo
+                        union all
+                        select visitante_id from jogo
+                    ) a group by clube_id
+                ) t where jogos <> 38
+                """, Integer.class);
+        assertThat(fora).isZero();
+    }
+
+    @Test
+    void naoDeveCruzarClubesDeDivisoesDiferentesNoMesmoJogo() {
+        var cruzados = jdbcTemplate.queryForObject("""
+                select count(*) from jogo j
+                join rodada r on r.id = j.rodada_id
+                join fase f on f.id = r.fase_id
+                join edicao_participante pm on pm.edicao_id = f.edicao_id and pm.clube_id = j.mandante_id
+                left join edicao_participante pv on pv.edicao_id = f.edicao_id and pv.clube_id = j.visitante_id
+                where pv.clube_id is null
+                """, Integer.class);
+        assertThat(cruzados).isZero();
+    }
+
     private int contar(String tabela) {
         return jdbcTemplate.queryForObject("select count(*) from " + tabela, Integer.class);
     }

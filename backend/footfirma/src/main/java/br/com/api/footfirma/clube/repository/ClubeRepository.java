@@ -15,4 +15,11 @@ public interface ClubeRepository extends JpaRepository<Clube, Long> {
     Optional<Clube> findBySlug(@Param("slug") String slug);
 
     Page<Clube> findAllByOrderByNomeCurto(Pageable paginacao);
+
+    /**
+     * Só o id do estádio. Carregar o {@code Clube} inteiro para ler uma coluna seria
+     * caro numa geração de calendário, que chama isto uma vez por jogo.
+     */
+    @Query("select c.estadio.id from Clube c where c.id = :clubeId")
+    Optional<Long> buscarEstadioId(@Param("clubeId") Long clubeId);
 }

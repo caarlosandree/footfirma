@@ -49,7 +49,8 @@ class CompeticaoControllerTest {
         when(competicaoService.buscarEdicao("brasileirao-serie-a", "2025")).thenReturn(Optional.of(
                 new EdicaoDetalhe(1L, "Brasileirão Série A 2025", "Brasileirão Série A",
                         LocalDate.of(2025, 3, 29), LocalDate.of(2025, 12, 21),
-                        List.of(new FaseResumo(1, "Fase única", "PONTOS_CORRIDOS", 1, false, false)),
+                        List.of(new FaseResumo(1L, 1, "Fase única", "PONTOS_CORRIDOS", 1,
+                                false, false, false)),
                         List.of(new RegraClassificacaoResumo(17, 20, "REBAIXAMENTO")))));
 
         mockMvc.perform(get("/api/v1/competicoes/brasileirao-serie-a/edicoes/2025"))

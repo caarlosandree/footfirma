@@ -16,13 +16,17 @@ import java.util.List;
  * <p>País, estado, posição, característica, perfil de avaliação e o catálogo de
  * formações não são apagados: são seed de migration, e o gerador depende deles.
  *
- * <p>{@code plano_escalacao} e {@code plano_tatico} abrem a lista porque referenciam
- * {@code jogador} e {@code clube}. Sem elas aqui, apagar o catálogo falha por chave
- * estrangeira assim que o primeiro plano existe.
+ * <p>{@code jogo}, {@code confronto}, {@code rodada}, {@code plano_escalacao} e
+ * {@code plano_tatico} abrem a lista porque referenciam {@code jogador}, {@code clube},
+ * {@code estadio} e {@code fase}. Sem elas aqui, apagar o catálogo falha por chave
+ * estrangeira assim que o primeiro plano ou o primeiro jogo existe.
  */
 final class LimpezaDoCatalogo {
 
     private static final List<String> TABELAS_EM_ORDEM = List.of(
+            "jogo",
+            "confronto",
+            "rodada",
             "plano_escalacao",
             "plano_tatico",
             "jogador_overall",
@@ -48,6 +52,11 @@ final class LimpezaDoCatalogo {
     }
 
     static void executar(JdbcTemplate jdbcTemplate) {
+        // Quebra a auto-referência de confronto antes do delete linear: em eliminatória, o
+        // confronto de uma fase aponta para os da anterior, e apagar em ordem arbitrária
+        // violaria a FK. Um update evita `on delete cascade` na auto-referência — que faria
+        // apagar as quartas levar a semifinal junto — e mantém a lista abaixo legível.
+        jdbcTemplate.update("update confronto set origem_lado_a = null, origem_lado_b = null");
         TABELAS_EM_ORDEM.forEach(tabela -> jdbcTemplate.update("delete from " + tabela));
     }
 }

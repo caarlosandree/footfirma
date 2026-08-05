@@ -66,10 +66,10 @@ src/main/resources/
 
 Status: verificado em 2026-08-05.
 
-Nove módulos de domínio existem: `temporada`, `geografia`, `clube`, `jogador`,
-`competicao`, `avaliacao`, `mundo`, `treinador` e `tatica`. **Ao criar o próximo, copie
-o formato de um deles** — a estrutura já está estabelecida, e partir do zero só produz
-divergência.
+Dez módulos de domínio existem: `temporada`, `geografia`, `clube`, `jogador`,
+`competicao`, `avaliacao`, `mundo`, `treinador`, `tatica` e `calendario`. **Ao criar o
+próximo, copie o formato de um deles** — a estrutura já está estabelecida, e partir do
+zero só produz divergência.
 
 Dois pontos que a leitura do código não entrega de imediato:
 
@@ -91,8 +91,8 @@ A API é read-only por decisão registrada em
 
 Em banco zerado o catálogo continua **vazio de clubes e jogadores**, e os endpoints
 respondem lista vazia e 404. Rodar o gerador popula duas ligas fictícias com 40
-clubes, 1.520 jogadores e um plano tático vigente por clube — **tudo inventado menos a
-geografia**. Ver `docs/runbooks/mundo.md`.
+clubes, 1.520 jogadores, um plano tático vigente por clube e o calendário completo das
+duas divisões — **tudo inventado menos a geografia**. Ver `docs/runbooks/mundo.md`.
 
 Três coisas que a leitura de `mundo` não entrega de imediato:
 

@@ -51,6 +51,11 @@ class ClubeServiceImpl implements ClubeService {
     }
 
     @Override
+    public Optional<Long> buscarEstadioPorClubeId(long clubeId) {
+        return clubeRepository.buscarEstadioId(clubeId);
+    }
+
+    @Override
     @Transactional
     public ResultadoDeSincronizacao sincronizarEstadio(DadosDeEstadio dados) {
         var existente = estadioRepository.findByNomeAndCidade(dados.nome(), dados.cidade());

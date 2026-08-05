@@ -6,6 +6,8 @@ Status: verificado em 2026-08-05
 
 - `../../src/main/java/br/com/api/footfirma/mundo/internal/MundoServiceImpl.java`
 - `../../src/main/java/br/com/api/footfirma/tatica/TaticaService.java`
+- `../../src/main/java/br/com/api/footfirma/calendario/CalendarioService.java`
+- `../../src/main/java/br/com/api/footfirma/mundo/internal/PerfisDeLiga.java`
 - `../../src/main/java/br/com/api/footfirma/tatica/internal/EscaladorAutomatico.java`
 - `../../src/main/java/br/com/api/footfirma/mundo/internal/CatalogoDeArquetipos.java`
 - `../../src/main/java/br/com/api/footfirma/mundo/internal/PapelNoElenco.java`
@@ -47,6 +49,8 @@ aplicação encerra ao terminar, como um job.
 | `jogador_overall` | 13.680 (nove posições por jogador) |
 | `plano_tatico` | 40 (um vigente por clube, `origem = 'AUTOMATICO'`) |
 | `plano_escalacao` | 920 (11 titulares + 12 no banco por clube) |
+| `rodada` | 76 (38 por divisão: turno e returno de 20 clubes) |
+| `confronto` / `jogo` | 760 cada (380 por divisão, um jogo por confronto) |
 
 Confira depois de gerar:
 
@@ -55,7 +59,40 @@ select
   (select count(*) from clube) as clubes,
   (select count(*) from jogador) as jogadores,
   (select count(*) from jogador_overall) as overalls,
-  (select count(*) from plano_tatico where vigente) as planos;
+  (select count(*) from plano_tatico where vigente) as planos,
+  (select count(*) from jogo) as jogos;
+```
+
+## O calendário
+
+Sai logo depois dos participantes, e antes dos elencos: o gerador de calendário precisa
+saber quem disputa, e não precisa de overall nem de plano.
+
+A primeira divisão é gerada antes da segunda, e isso é **argumento**, não a ordem das
+linhas em `MundoServiceImpl` — quem gera primeiro ocupa os melhores dias. A precedência
+vive em `EdicaoParaGerar`, e o módulo ordena por ela.
+
+Cada divisão tem um perfil em `PerfisDeLiga`: os dias em que joga, com peso. Os dois
+perfis compartilham o leque e se distinguem pelo peso — a primeira concentra no domingo,
+a segunda vaza mais para segunda e terça. **Nenhum jogo cai na sexta**, como na tabela
+real da CBF.
+
+As 38 rodadas cabem nos 246 dias da edição porque três delas nascem de meio de semana e
+ocupam a quarta da mesma semana de um domingo, em vez de consumir uma semana só para si.
+
+Confira o descanso depois de gerar — nenhum clube joga com menos de três dias de folga:
+
+```sql
+with agenda as (
+  select mandante_id as clube_id, data_jogo from jogo
+  union all select visitante_id, data_jogo from jogo
+), consecutivos as (
+  select clube_id, data_jogo,
+         lag(data_jogo) over (partition by clube_id order by data_jogo) as anterior
+  from agenda
+)
+select count(*) as violacoes from consecutivos
+where anterior is not null and data_jogo - anterior < 3;
 ```
 
 ## A escalação vem por último
@@ -88,15 +125,23 @@ duplica.
 
 ## O que a limpeza apaga
 
-`recriar=true` esvazia, na ordem inversa das chaves estrangeiras: `plano_escalacao`,
+`recriar=true` esvazia, na ordem inversa das chaves estrangeiras: `jogo`, `confronto`,
+`rodada`, `plano_escalacao`,
 `plano_tatico`, `jogador_overall`, `jogador_vinculo`, `jogador_atributo`,
 `jogador_atributo_oculto`, `jogador_caracteristica`, `jogador_posicao`,
 `jogador_referencia_externa`, `jogador`, `regra_classificacao`, `edicao_participante`,
 `fase`, `edicao`, `competicao_referencia_externa`, `competicao`, `clube_alias`,
 `clube_referencia_externa`, `clube`, `estadio`.
 
-As duas primeiras abrem a lista porque referenciam `jogador` e `clube` — sem elas, a
-limpeza falha por chave estrangeira assim que existe um plano gravado.
+As cinco primeiras abrem a lista porque referenciam `jogador`, `clube`, `estadio` e
+`fase` — sem elas, a limpeza falha por chave estrangeira assim que existe um plano ou um
+jogo gravado.
+
+Antes dos `delete`, a limpeza roda um `update confronto set origem_lado_a = null,
+origem_lado_b = null`. `confronto` referencia a si mesma no chaveamento de mata-mata, e um
+`delete` linear violaria essa FK. Um `update` resolve sem `on delete cascade` na
+auto-referência — que faria apagar as quartas levar a semifinal junto — e sem quebrar a
+lista acima em passos por fase.
 
 **Não apaga** país, estado, posição, característica, perfil de avaliação e o catálogo
 de formações (`formacao`, `formacao_slot`): são seed de migration, e o gerador depende
