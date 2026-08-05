@@ -323,15 +323,26 @@ Os números — tamanho do repertório, limites do banco, faixas de mentalidade 
 
 Nenhuma cabe num `check` de linha, porque nenhuma enxerga as outras linhas do agregado:
 
-- exatamente 11 titulares, e um slot para cada um
-- exatamente um goleiro entre os titulares
+- exatamente 11 titulares, um por slot, e os slots são exatamente `1..11`
 - todo escalado tem `jogador_vinculo` naquele clube e temporada
+- ninguém repetido entre titulares e banco
+- o banco tem um goleiro reserva
 - capitão, quando informado, é um dos 11 titulares — a coluna é anulável
-- banco entre 5 e 12, com as ordens de 1 a N sem saltos
+- banco entre 5 e 12
 
-A unicidade da ordem do banco não está nesta lista: `uq_escalacao_banco` a segura no
-banco. O que sobra aqui é a continuidade — que as ordens formem `1..N` sem buracos —,
-e essa o índice não alcança.
+A unicidade da ordem do banco não está aqui: `uq_escalacao_banco` a segura no banco.
+
+**Duas invariantes que uma versão anterior desta lista trazia saíram, por serem
+inalcançáveis.** "Exatamente um goleiro entre os titulares" é consequência, não regra:
+a posição de cada slot vem da formação, toda formação tem exatamente um slot `GOL`, e
+os slots já são validados como exatamente `1..11` — logo exatamente um titular ocupa o
+gol, sempre. E "as ordens do banco vão de 1 a N sem saltos" é estrutural: `NovoPlano`
+recebe o banco como `List<Long>` e `ordem_banco` é a posição na lista, então buraco não
+tem como existir.
+
+O que ficou no lugar da primeira é a regra que de fato pode ser violada e importa: um
+time sem goleiro reserva. Escalar um zagueiro no gol continua permitido, e continua
+custando caro pela aptidão — como a decisão 4 quer.
 
 `TaticaServiceImpl` é o único caminho de escrita, pelo mesmo motivo que
 `TreinadorServiceImpl` é o único da soma das skills. `EscalacaoInvalidaTest` prova que
@@ -449,7 +460,7 @@ antes de existir quem transfira.
 | Teste | Afirma |
 |---|---|
 | `PlanoIntegridadeTest` | segundo plano vigente no mesmo clube e temporada é rejeitado **pelo banco**; titular sem slot e reserva com slot idem; dois titulares no mesmo slot idem; dois reservas na mesma `ordem_banco` idem |
-| `EscalacaoInvalidaTest` | 10 titulares, dois goleiros, jogador de outro clube, capitão no banco e banco com buraco na ordem são rejeitados **pelo serviço** — o banco sozinho aceita os cinco |
+| `EscalacaoInvalidaTest` | 10 titulares, slot fora de `1..11`, jogador de outro clube, jogador repetido, banco sem goleiro, banco abaixo do mínimo e capitão no banco são rejeitados **pelo serviço** — e um último caso prova que o banco de dados sozinho aceita todos eles |
 | `VersionamentoTest` | salvar duas vezes gera versões 1 e 2; só a 2 é vigente; a 1 preserva a aptidão congelada e as linhas de escalação |
 | `CatalogoDeFormacaoTest` | cada uma das seis formações seedadas tem 11 slots e exatamente um `GOL` |
 | `ModularidadeTest` (existente) | `tatica` não alcança tipo `internal` de outro módulo |
