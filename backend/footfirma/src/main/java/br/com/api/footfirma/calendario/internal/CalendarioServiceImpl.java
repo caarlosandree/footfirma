@@ -13,6 +13,7 @@ import br.com.api.footfirma.calendario.dto.RelatorioDeCalendario;
 import br.com.api.footfirma.calendario.dto.ResultadoDoJogo;
 import br.com.api.footfirma.calendario.dto.RodadaDetalhe;
 import br.com.api.footfirma.calendario.dto.SituacaoDoJogo;
+import br.com.api.footfirma.calendario.dto.TipoDeRodada;
 import br.com.api.footfirma.calendario.repository.ConfrontoRepository;
 import br.com.api.footfirma.calendario.repository.JogoRepository;
 import br.com.api.footfirma.calendario.repository.RodadaRepository;
@@ -45,6 +46,21 @@ class CalendarioServiceImpl implements CalendarioService {
     private final JogoRepository jogos;
     private final CompeticaoService competicaoService;
     private final ClubeService clubeService;
+
+    /**
+     * O perfil usado ao realocar a data de um confronto que só agora conheceu seus clubes.
+     *
+     * <p>Não é o perfil da competição: ele é entrada de geração e não fica persistido, e a
+     * realocação acontece muito depois, disparada por um resultado. Se um dia esta
+     * aproximação incomodar — uma copa cujos dias divergem visivelmente da liga —, é o
+     * sinal de que o perfil precisa virar dado, e a decisão se reabre com caso concreto.
+     */
+    private static final PerfilDeCalendario PERFIL_DE_REALOCACAO = new PerfilDeCalendario(
+            Map.of(TipoDeRodada.FIM_DE_SEMANA, Map.of(
+                            java.time.DayOfWeek.SUNDAY, 50, java.time.DayOfWeek.SATURDAY, 50),
+                    TipoDeRodada.MEIO_DE_SEMANA, Map.of(
+                            java.time.DayOfWeek.WEDNESDAY, 60, java.time.DayOfWeek.THURSDAY, 40)),
+            ConstantesDeCalendario.DESCANSO_MINIMO_EM_DIAS);
 
     @Override
     @Transactional
@@ -437,7 +453,64 @@ class CalendarioServiceImpl implements CalendarioService {
                 .ifPresent(vencedor -> {
                     confronto.setVencedorClubeId(vencedor);
                     confrontos.save(confronto);
+                    propagar(confronto);
                 });
+    }
+
+    /**
+     * Leva o vencedor aos confrontos que o esperam e, quando um deles fecha os dois lados,
+     * materializa seus jogos.
+     */
+    private void propagar(Confronto resolvido) {
+        for (var dependente : confrontos.findByOrigemLadoAOrOrigemLadoB(
+                resolvido.getId(), resolvido.getId())) {
+
+            if (resolvido.getId().equals(dependente.getOrigemLadoA())) {
+                dependente.setClubeAId(resolvido.getVencedorClubeId());
+            } else {
+                dependente.setClubeBId(resolvido.getVencedorClubeId());
+            }
+            confrontos.save(dependente);
+
+            if (dependente.getClubeAId() != null && dependente.getClubeBId() != null) {
+                materializar(dependente);
+            }
+        }
+    }
+
+    /**
+     * Dá clubes, estádio e data definitiva aos jogos de um confronto que acabou de fechar.
+     *
+     * <p>A data marcada no sorteio foi decidida sem saber quem jogaria — ou seja, o
+     * descanso nunca foi verificado para estes dois clubes. Realocar aqui é o que mantém a
+     * invariante válida para todo jogo do banco, sem exceção. É também o que acontece de
+     * fato: a CBF só detalha data e hora do mata-mata depois dos classificados.
+     */
+    private void materializar(Confronto confronto) {
+        var perfil = PERFIL_DE_REALOCACAO;
+        var aleatorio = new SplittableRandom(confronto.getId());
+
+        for (var jogo : jogos.findByConfrontoIdOrderByOrdemNoConfrontoAsc(confronto.getId())) {
+            // Ida com A em casa, volta invertida — a mesma regra da geração.
+            var primeiro = jogo.getOrdemNoConfronto() == 1;
+            var mandanteId = primeiro ? confronto.getClubeAId() : confronto.getClubeBId();
+            var visitanteId = primeiro ? confronto.getClubeBId() : confronto.getClubeAId();
+
+            var rodada = jogo.getRodada();
+            var faseIds = List.of(confronto.getFaseId());
+            var data = AlocadorDeDatas.alocar(
+                    rodada.getJanelaInicio(), rodada.getJanelaFim(),
+                    SorteadorDeDia.ordenarPorPeso(perfil.pesos().get(rodada.getTipo()), aleatorio),
+                    jogos.findDatasDoClube(mandanteId, faseIds),
+                    jogos.findDatasDoClube(visitanteId, faseIds),
+                    perfil.descansoMinimoEmDias());
+
+            jogo.setMandanteId(mandanteId);
+            jogo.setVisitanteId(visitanteId);
+            jogo.setEstadioId(estadioDe(mandanteId));
+            jogo.setDataJogo(data);
+            jogos.save(jogo);
+        }
     }
 
     @Override
