@@ -1,7 +1,7 @@
 # Tática e escalação — design
 
 Data: 2026-08-05
-Status: aprovado, não implementado
+Status: implementado em 2026-08-05
 
 ## Contexto
 
