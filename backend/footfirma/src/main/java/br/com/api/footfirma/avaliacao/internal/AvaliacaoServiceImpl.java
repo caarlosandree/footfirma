@@ -5,6 +5,7 @@ import br.com.api.footfirma.avaliacao.domain.JogadorOverall;
 import br.com.api.footfirma.avaliacao.dto.AvaliacaoDePosicao;
 import br.com.api.footfirma.avaliacao.dto.AvaliacoesDoJogador;
 import br.com.api.footfirma.avaliacao.dto.ItemDeRanking;
+import br.com.api.footfirma.avaliacao.dto.OverallDeJogador;
 import br.com.api.footfirma.avaliacao.dto.ResultadoMaterializacao;
 import br.com.api.footfirma.avaliacao.repository.JogadorOverallRepository;
 import br.com.api.footfirma.avaliacao.repository.PerfilAvaliacaoRepository;
@@ -22,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -39,6 +42,18 @@ class AvaliacaoServiceImpl implements AvaliacaoService {
     private final MaterializadorDeLote materializadorDeLote;
     private final JogadorService jogadorService;
     private final TemporadaService temporadaService;
+
+    @Override
+    public List<OverallDeJogador> listarOveralls(Collection<Long> jogadorIds, long temporadaId) {
+        if (jogadorIds.isEmpty()) {
+            return List.of();
+        }
+        return jogadorOverallRepository
+                .findByTemporadaIdAndJogadorIdIn(temporadaId, jogadorIds).stream()
+                .map(registro -> new OverallDeJogador(registro.getJogadorId(),
+                        registro.getPosicaoId(), registro.getOverall()))
+                .toList();
+    }
 
     @Override
     public Optional<AvaliacoesDoJogador> buscarPorSlug(String slug, String labelTemporada) {

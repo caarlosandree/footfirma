@@ -7,6 +7,7 @@ import br.com.api.footfirma.jogador.dto.DadosDeJogador;
 import br.com.api.footfirma.jogador.dto.DadosDePosicaoSecundaria;
 import br.com.api.footfirma.jogador.dto.DadosDeVinculo;
 import br.com.api.footfirma.jogador.dto.JogadorComAtributos;
+import br.com.api.footfirma.jogador.dto.JogadorDoElenco;
 import br.com.api.footfirma.jogador.dto.JogadorDetalhe;
 import br.com.api.footfirma.jogador.dto.JogadorResumo;
 import br.com.api.footfirma.jogador.dto.PosicaoCatalogo;
@@ -23,6 +24,13 @@ public interface JogadorService {
     Optional<JogadorDetalhe> buscarPorSlug(String slug, String labelTemporada);
 
     List<JogadorResumo> listarElenco(String slugClube, String labelTemporada);
+
+    /**
+     * O elenco do clube na temporada, por id. Existe ao lado de {@link #listarElenco}
+     * porque quem escala precisa de {@code posicaoPrincipalId} e {@code categoria},
+     * que {@link JogadorResumo} não carrega, e trabalha com id, não com slug.
+     */
+    List<JogadorDoElenco> listarElencoParaEscalacao(long clubeId, long temporadaId);
 
     List<PosicaoCatalogo> listarPosicoes();
 
