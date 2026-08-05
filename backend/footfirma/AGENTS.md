@@ -61,14 +61,15 @@ src/main/java/br/com/api/footfirma/
 
 src/main/resources/
 ├── application.properties
-└── db/migration/ # Flyway: V{n}__descricao.sql (V1…V16 aplicadas)
+└── db/migration/ # Flyway: V{n}__descricao.sql (V1…V21 aplicadas)
 ```
 
-Status: verificado em 2026-08-03.
+Status: verificado em 2026-08-05.
 
-Sete módulos de domínio existem: `temporada`, `geografia`, `clube`, `jogador`,
-`competicao`, `avaliacao` e `mundo`. **Ao criar o próximo, copie o formato de um
-deles** — a estrutura já está estabelecida, e partir do zero só produz divergência.
+Nove módulos de domínio existem: `temporada`, `geografia`, `clube`, `jogador`,
+`competicao`, `avaliacao`, `mundo`, `treinador` e `tatica`. **Ao criar o próximo, copie
+o formato de um deles** — a estrutura já está estabelecida, e partir do zero só produz
+divergência.
 
 Dois pontos que a leitura do código não entrega de imediato:
 
@@ -76,9 +77,12 @@ Dois pontos que a leitura do código não entrega de imediato:
   JPA só dentro do mesmo módulo. Veja `Jogador.paisId`, `JogadorAtributo.temporadaId`
   e as três de `JogadorOverall`. A integridade fica na chave estrangeira da migration.
 - **Subpacote só cruza a fronteira do módulo com `@NamedInterface`.** Hoje
-  `temporada/dto`, `clube/dto`, `jogador/dto` e `avaliacao/dto` o declaram. Sem isso o
-  `ModularidadeTest` reprova o consumidor — e o erro aparece como falha de
-  modularidade, não como erro de compilação no lugar da causa.
+  `temporada/dto`, `clube/dto`, `jogador/dto`, `avaliacao/dto` e `tatica/dto` o
+  declaram. Sem isso o `ModularidadeTest` reprova o consumidor — e o erro aparece como
+  falha de modularidade, não como erro de compilação no lugar da causa.
+  **`treinador/dto` não declara**, e é por isso que `TreinadorService.buscarPerfilDoClube`
+  devolve `PerfilDeTreinador`, um record do pacote raiz, em vez de `TreinadorDetalhe`.
+  Enquanto ninguém consumia `treinador` a omissão não aparecia; `tatica` foi o primeiro.
 
 A API é read-only por decisão registrada em
 `docs/adr/2026-08-01-catalogo-read-only.md`: nenhum controller aceita `POST`, `PUT`,

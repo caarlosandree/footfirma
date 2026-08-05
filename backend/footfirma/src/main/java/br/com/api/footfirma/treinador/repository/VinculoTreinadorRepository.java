@@ -12,6 +12,9 @@ public interface VinculoTreinadorRepository extends JpaRepository<VinculoTreinad
 
     Optional<VinculoTreinador> findByClubeIdAndFimIsNull(Long clubeId);
 
+    Optional<VinculoTreinador> findByClubeIdAndTemporadaIdAndFimIsNull(Long clubeId,
+                                                                       Long temporadaId);
+
     List<VinculoTreinador> findByTemporadaIdAndFimIsNull(Long temporadaId);
 
     List<VinculoTreinador> findByTemporadaId(Long temporadaId);

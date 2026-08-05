@@ -49,4 +49,14 @@ public interface TreinadorService {
     VinculoResumo aceitarProposta(long propostaId);
 
     PropostaResumo recusarProposta(long propostaId);
+
+    /**
+     * O perfil de quem dirige o clube na temporada. Vazio quando o clube está sem
+     * treinador — situação normal entre a demissão e a próxima contratação.
+     *
+     * <p>Devolve {@link PerfilDeTreinador}, e não {@code TreinadorDetalhe}, porque
+     * {@code treinador.dto} é subpacote sem {@code @NamedInterface}: um consumidor de
+     * fora não pode referenciá-lo sem reprovar no teste de modularidade.
+     */
+    Optional<PerfilDeTreinador> buscarPerfilDoClube(long clubeId, long temporadaId);
 }

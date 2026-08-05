@@ -16,7 +16,9 @@ import br.com.api.footfirma.treinador.dto.VinculoResumo;
 import br.com.api.footfirma.treinador.mapper.TreinadorMapper;
 import br.com.api.footfirma.treinador.repository.PropostaRepository;
 import br.com.api.footfirma.treinador.repository.TreinadorRepository;
+import br.com.api.footfirma.treinador.PerfilDeTreinador;
 import br.com.api.footfirma.treinador.repository.TreinadorSkillRepository;
+import br.com.api.footfirma.treinador.repository.VinculoTreinadorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,7 @@ class TreinadorServiceImpl implements TreinadorService {
 
     private final TreinadorRepository treinadores;
     private final TreinadorSkillRepository skills;
+    private final VinculoTreinadorRepository vinculos;
     private final PropostaRepository propostas;
     private final ContratacaoDeTreinador contratacao;
     private final TreinadorMapper treinadorMapper;
@@ -149,6 +152,23 @@ class TreinadorServiceImpl implements TreinadorService {
                         skill + " passaria de " + SKILL_MAXIMA + " com este ganho");
             }
         });
+    }
+
+    @Override
+    public Optional<PerfilDeTreinador> buscarPerfilDoClube(long clubeId, long temporadaId) {
+        return vinculos.findByClubeIdAndTemporadaIdAndFimIsNull(clubeId, temporadaId)
+                .map(vinculo -> {
+                    var treinador = vinculo.getTreinador();
+                    var tatica = skills
+                            .findByTreinadorIdAndTemporadaIdAndSkill(
+                                    treinador.getId(), temporadaId, Skill.TATICA)
+                            .map(TreinadorSkill::getValor)
+                            // Treinador recém-criado ainda não tem skills da temporada.
+                            // Zero é o que faz o escalador cair no repertório mínimo.
+                            .orElse(0);
+                    return new PerfilDeTreinador(treinador.getId(),
+                            treinador.getReputacao(), tatica);
+                });
     }
 
     private Map<Skill, Integer> skillsDe(Long treinadorId, long temporadaId) {

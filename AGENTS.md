@@ -185,14 +185,14 @@ Duas condições para o fluxo funcionar:
 
 ## Estado atual
 
-Status: verificado em 2026-08-03.
+Status: verificado em 2026-08-05.
 
 **Os dois lados estão em estágios muito diferentes.**
 
-O **backend** saiu do scaffold. Tem sete módulos de domínio (`temporada`, `geografia`,
-`clube`, `jogador`, `competicao`, `avaliacao`, `mundo`), mais `config` e `shared`
-como módulos abertos, dezesseis migrations Flyway e uma suíte de 144 testes em 33
-classes. A API é read-only em `/api/v1/clubes`, `/jogadores`, `/competicoes`,
+O **backend** saiu do scaffold. Tem nove módulos de domínio (`temporada`, `geografia`,
+`clube`, `jogador`, `competicao`, `avaliacao`, `mundo`, `treinador`, `tatica`), mais
+`config` e `shared` como módulos abertos, vinte e uma migrations Flyway e uma suíte de
+331 testes em 55 classes. A API é read-only em `/api/v1/clubes`, `/jogadores`, `/competicoes`,
 `/jogadores/{slug}/overall` e `/rankings`. Aqui já existem exemplos prontos: ao criar
 um módulo novo, copie o formato de um existente em vez de partir do zero.
 
@@ -216,8 +216,16 @@ foi **abandonado e removido**: o mundo passou a ser gerado proceduralmente, e o
 importador existia para desconfiar de dado externo que não existe mais. Ver
 `docs/superpowers/specs/2026-08-03-mundo-ficticio-design.md`.
 
-A progressão de jogadores entre temporadas tem spec próprio ainda não escrito, e é o
-próximo passo natural: hoje o mundo tem uma temporada só (2026), e o versionamento
-por temporada que o schema suporta não é exercitado. Competição continental e copa
-também ficaram fora desta versão. Ver `docs/superpowers/specs/` e
-`docs/superpowers/plans/`.
+O caminho até a partida foi fatiado em três camadas, e duas estão feitas: `treinador`
+(quem decide) e `tatica` (o que ele decide — plano versionado, cinco instruções, onze,
+banco, capitão e escalador automático determinístico). Falta a camada 3, **partida** —
+e antes dela calendário e rodada, que `competicao` não tem: hoje ele vai só até
+`Competicao → Edicao → Fase → EdicaoParticipante`, sem tabela de jogos.
+
+Duas dívidas conhecidas, ambas sem spec escrito. A **progressão entre temporadas**:
+hoje o mundo tem uma temporada só (2026), o versionamento por temporada que o schema
+suporta não é exercitado, e `clube.reputacao` é estática — o que já morde em dois
+lugares, na moral do treinador e na mentalidade da IA. E a **autenticação**, que é
+quem liga pessoa a treinador; sem ela, `treinador` e `tatica` não têm controller, de
+propósito. Competição continental e copa também ficaram fora. Ver
+`docs/superpowers/specs/` e `docs/superpowers/plans/`.

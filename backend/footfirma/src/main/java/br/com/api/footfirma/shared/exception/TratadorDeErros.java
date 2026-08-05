@@ -27,6 +27,14 @@ class TratadorDeErros {
         return problema;
     }
 
+    @ExceptionHandler(EscalacaoInvalidaException.class)
+    ProblemDetail escalacaoInvalida(EscalacaoInvalidaException excecao) {
+        var problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY, excecao.getMessage());
+        problema.setTitle("Escalação inválida");
+        return problema;
+    }
+
     @ExceptionHandler(PropostaIndisponivelException.class)
     ProblemDetail propostaIndisponivel(PropostaIndisponivelException excecao) {
         var problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, excecao.getMessage());
