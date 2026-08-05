@@ -199,8 +199,8 @@ um módulo novo, copie o formato de um existente em vez de partir do zero.
 O banco tem o schema completo e os seeds de país, estado, posição, característica e
 perfis de peso. Em base zerada continua **vazio de clubes e jogadores** — os endpoints
 respondem lista vazia e 404, e isso é esperado. Rodar o gerador sob o profile `mundo`
-popula duas ligas nacionais fictícias com 40 clubes, 1.520 jogadores e 13.680 linhas
-de overall. **Nada aqui é real além da geografia**: clubes, estádios e jogadores são
+popula duas ligas nacionais fictícias com 40 clubes, 1.520 jogadores, 13.680 linhas
+de overall e um plano tático vigente por clube, escalado automaticamente. **Nada aqui é real além da geografia**: clubes, estádios e jogadores são
 inventados; cidade e UF saem do seed. O mundo é balanceado por seis arquétipos de
 clube, de modo que time pobre tenha base forte e gigante endividado decaia. Ver
 `backend/footfirma/docs/runbooks/mundo.md`.

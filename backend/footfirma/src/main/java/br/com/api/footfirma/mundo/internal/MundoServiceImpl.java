@@ -20,6 +20,7 @@ import br.com.api.footfirma.jogador.dto.PosicaoCatalogo;
 import br.com.api.footfirma.mundo.MundoService;
 import br.com.api.footfirma.mundo.dto.ContagemPorEntidade;
 import br.com.api.footfirma.mundo.dto.RelatorioDeMundo;
+import br.com.api.footfirma.tatica.TaticaService;
 import br.com.api.footfirma.temporada.TemporadaService;
 import br.com.api.footfirma.temporada.dto.DadosDeTemporada;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,7 @@ class MundoServiceImpl implements MundoService {
     private final ClubeService clubeService;
     private final JogadorService jogadorService;
     private final AvaliacaoService avaliacaoService;
+    private final TaticaService taticaService;
     private final GeografiaService geografiaService;
     private final PropriedadesDeMundo propriedades;
     private final JdbcTemplate jdbcTemplate;
@@ -62,6 +64,10 @@ class MundoServiceImpl implements MundoService {
      * conexão por minutos, e {@code AvaliacaoService.materializar} é
      * {@code NOT_SUPPORTED} — ela suspende a transação corrente, então não enxergaria
      * nenhum dos 1.520 atributos ainda não commitados e gravaria zero overall.
+     *
+     * <p>A escalação é o último passo pelo mesmo motivo, invertido: o escalador lê
+     * {@code jogador_overall}, e antes de {@code materializar} essa tabela está vazia.
+     * Chamado no meio da geração, ele escalaria onze jogadores com aptidão zero.
      *
      * <p>O preço é que uma falha no meio deixa mundo parcial. É o que
      * {@code footfirma.mundo.recriar} resolve.
@@ -85,6 +91,8 @@ class MundoServiceImpl implements MundoService {
 
         var materializacao = avaliacaoService.materializar(TEMPORADA);
         contagens.add(new ContagemPorEntidade("jogador_overall", materializacao.linhas(), 0));
+
+        escalarClubes(clubes, idsPorSlug, temporadaId, contagens);
         return new RelatorioDeMundo(propriedades.semente(), TEMPORADA, List.copyOf(contagens));
     }
 
@@ -213,6 +221,31 @@ class MundoServiceImpl implements MundoService {
                 jogador.categoria(), jogador.numeroCamisa(),
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 valorDeMercado(jogador)));
+    }
+
+    /**
+     * Dá a todo clube um plano tático vigente, escalado automaticamente.
+     *
+     * <p>A leitura extra existe só para o relatório: {@code garantirPlanoVigente} devolve
+     * o plano sem dizer se o criou, e alargar essa assinatura degradaria o contrato que a
+     * partida vai consumir por causa de uma contagem. São 40 leituras.
+     *
+     * <p>Se o elenco de um clube não fechar um time, {@code EscalacaoInvalidaException}
+     * sobe e o mundo fica com parte dos clubes escalados — o mesmo mundo parcial que
+     * qualquer outra falha aqui produz, e a mesma saída: gerar de novo com
+     * {@code footfirma.mundo.recriar}.
+     */
+    private void escalarClubes(List<ClubeGerado> clubes, Map<String, Long> idsPorSlug,
+                               Long temporadaId, List<ContagemPorEntidade> contagens) {
+        var criados = 0;
+        for (var clube : clubes) {
+            var clubeId = idsPorSlug.get(clube.slug());
+            if (taticaService.buscarPlanoVigente(clubeId, temporadaId).isEmpty()) {
+                criados++;
+            }
+            taticaService.garantirPlanoVigente(clubeId, temporadaId);
+        }
+        contagens.add(new ContagemPorEntidade("plano_tatico", criados, clubes.size() - criados));
     }
 
     /**

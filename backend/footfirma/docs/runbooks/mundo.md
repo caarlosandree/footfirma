@@ -1,10 +1,12 @@
 # Gerar o mundo
 
-Status: verificado em 2026-08-03
+Status: verificado em 2026-08-05
 
 ## Fontes
 
 - `../../src/main/java/br/com/api/footfirma/mundo/internal/MundoServiceImpl.java`
+- `../../src/main/java/br/com/api/footfirma/tatica/TaticaService.java`
+- `../../src/main/java/br/com/api/footfirma/tatica/internal/EscaladorAutomatico.java`
 - `../../src/main/java/br/com/api/footfirma/mundo/internal/CatalogoDeArquetipos.java`
 - `../../src/main/java/br/com/api/footfirma/mundo/internal/PapelNoElenco.java`
 - `../../src/main/java/br/com/api/footfirma/mundo/internal/LimpezaDoCatalogo.java`
@@ -43,6 +45,8 @@ aplicação encerra ao terminar, como um job.
 | `jogador` | 1.520 (26 profissionais + 12 de base por clube) |
 | `jogador_atributo` / `jogador_vinculo` | 1.520 cada |
 | `jogador_overall` | 13.680 (nove posições por jogador) |
+| `plano_tatico` | 40 (um vigente por clube, `origem = 'AUTOMATICO'`) |
+| `plano_escalacao` | 920 (11 titulares + 12 no banco por clube) |
 
 Confira depois de gerar:
 
@@ -50,8 +54,23 @@ Confira depois de gerar:
 select
   (select count(*) from clube) as clubes,
   (select count(*) from jogador) as jogadores,
-  (select count(*) from jogador_overall) as overalls;
+  (select count(*) from jogador_overall) as overalls,
+  (select count(*) from plano_tatico where vigente) as planos;
 ```
+
+## A escalação vem por último
+
+O gerador chama `TaticaService.garantirPlanoVigente` para os 40 clubes **depois** de
+materializar o overall, e a ordem não é arbitrária: o escalador lê `jogador_overall`
+para decidir quem joga e para congelar `aptidao_no_momento`. Chamado antes, ele
+escalaria onze jogadores com aptidão zero.
+
+O plano sai com `versao = 1`, `origem = 'AUTOMATICO'` e capitão preenchido. Nenhum é
+`MANUAL` — não há treinador humano em mundo gerado.
+
+Se o elenco de um clube não fechar um time, `EscalacaoInvalidaException` sobe e a
+geração para com parte dos clubes escalados. Como qualquer falha aqui, a saída é gerar
+de novo com `recriar=true`.
 
 ## Como trocar o mundo
 
@@ -69,15 +88,19 @@ duplica.
 
 ## O que a limpeza apaga
 
-`recriar=true` esvazia, na ordem inversa das chaves estrangeiras: `jogador_overall`,
-`jogador_vinculo`, `jogador_atributo`, `jogador_atributo_oculto`,
-`jogador_caracteristica`, `jogador_posicao`, `jogador_referencia_externa`, `jogador`,
-`regra_classificacao`, `edicao_participante`, `fase`, `edicao`,
-`competicao_referencia_externa`, `competicao`, `clube_alias`,
+`recriar=true` esvazia, na ordem inversa das chaves estrangeiras: `plano_escalacao`,
+`plano_tatico`, `jogador_overall`, `jogador_vinculo`, `jogador_atributo`,
+`jogador_atributo_oculto`, `jogador_caracteristica`, `jogador_posicao`,
+`jogador_referencia_externa`, `jogador`, `regra_classificacao`, `edicao_participante`,
+`fase`, `edicao`, `competicao_referencia_externa`, `competicao`, `clube_alias`,
 `clube_referencia_externa`, `clube`, `estadio`.
 
-**Não apaga** país, estado, posição, característica e perfil de avaliação: são seed de
-migration, e o gerador depende deles.
+As duas primeiras abrem a lista porque referenciam `jogador` e `clube` — sem elas, a
+limpeza falha por chave estrangeira assim que existe um plano gravado.
+
+**Não apaga** país, estado, posição, característica, perfil de avaliação e o catálogo
+de formações (`formacao`, `formacao_slot`): são seed de migration, e o gerador depende
+deles.
 
 ## Como rebalancear
 

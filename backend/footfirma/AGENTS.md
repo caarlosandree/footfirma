@@ -91,8 +91,8 @@ A API é read-only por decisão registrada em
 
 Em banco zerado o catálogo continua **vazio de clubes e jogadores**, e os endpoints
 respondem lista vazia e 404. Rodar o gerador popula duas ligas fictícias com 40
-clubes e 1.520 jogadores — **tudo inventado menos a geografia**. Ver
-`docs/runbooks/mundo.md`.
+clubes, 1.520 jogadores e um plano tático vigente por clube — **tudo inventado menos a
+geografia**. Ver `docs/runbooks/mundo.md`.
 
 Três coisas que a leitura de `mundo` não entrega de imediato:
 
@@ -102,7 +102,8 @@ Três coisas que a leitura de `mundo` não entrega de imediato:
 - **`gerar()` não abre transação envolvente, de propósito.**
   `AvaliacaoService.materializar` é `NOT_SUPPORTED` e suspende a transação corrente:
   dentro de um commit único ela não veria os atributos recém-gravados e produziria
-  zero overall.
+  zero overall. Pelo mesmo motivo invertido, a escalação é o **último** passo: o
+  escalador lê `jogador_overall`, que antes de `materializar` está vazia.
 - **As fábricas são puras** — recebem `SplittableRandom` e devolvem records, sem
   Spring e sem banco. É o que permite testar balanceamento sem Docker.
 
