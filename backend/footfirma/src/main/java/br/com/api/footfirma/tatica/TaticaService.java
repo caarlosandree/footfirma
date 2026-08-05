@@ -1,6 +1,9 @@
 package br.com.api.footfirma.tatica;
 
 import br.com.api.footfirma.tatica.dto.NovoPlano;
+import br.com.api.footfirma.tatica.dto.PlanoVigente;
+
+import java.util.Optional;
 
 /**
  * A única porta pública do módulo.
@@ -21,4 +24,12 @@ public interface TaticaService {
      *         se qualquer invariante de agregado for violada
      */
     long salvarPlano(long clubeId, long temporadaId, NovoPlano plano);
+
+    /**
+     * O plano vigente do clube, com a aptidão congelada e a atual lado a lado.
+     *
+     * <p>Leitura pura: devolve vazio quando não há plano, e nunca cria um. Quem quer
+     * garantir que exista chama {@code garantirPlanoVigente}.
+     */
+    Optional<PlanoVigente> buscarPlanoVigente(long clubeId, long temporadaId);
 }

@@ -9,9 +9,12 @@ import br.com.api.footfirma.tatica.TaticaService;
 import br.com.api.footfirma.tatica.domain.FormacaoSlot;
 import br.com.api.footfirma.tatica.domain.PlanoEscalacao;
 import br.com.api.footfirma.tatica.domain.PlanoTatico;
+import br.com.api.footfirma.tatica.dto.Escalado;
 import br.com.api.footfirma.tatica.dto.NovoPlano;
 import br.com.api.footfirma.tatica.dto.OrigemDoPlano;
 import br.com.api.footfirma.tatica.dto.Papel;
+import br.com.api.footfirma.tatica.dto.PlanoVigente;
+import br.com.api.footfirma.tatica.repository.FormacaoRepository;
 import br.com.api.footfirma.tatica.repository.FormacaoSlotRepository;
 import br.com.api.footfirma.tatica.repository.PlanoEscalacaoRepository;
 import br.com.api.footfirma.tatica.repository.PlanoTaticoRepository;
@@ -21,9 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,6 +40,7 @@ class TaticaServiceImpl implements TaticaService {
     private final PlanoTaticoRepository planos;
     private final PlanoEscalacaoRepository escalacoes;
     private final FormacaoSlotRepository formacaoSlots;
+    private final FormacaoRepository formacoes;
     private final JogadorService jogadorService;
     private final AvaliacaoService avaliacaoService;
     private final JdbcTemplate jdbcTemplate;
@@ -53,6 +59,61 @@ class TaticaServiceImpl implements TaticaService {
         var overalls = tabelaDe(principalPorJogador.keySet(), temporadaId);
         return gravar(clubeId, temporadaId, novo, OrigemDoPlano.MANUAL,
                 posicaoPorSlot, principalPorJogador, overalls);
+    }
+
+    @Override
+    public Optional<PlanoVigente> buscarPlanoVigente(long clubeId, long temporadaId) {
+        return planos.findByClubeIdAndTemporadaIdAndVigenteTrue(clubeId, temporadaId)
+                .map(plano -> montar(plano, temporadaId));
+    }
+
+    private PlanoVigente montar(PlanoTatico plano, long temporadaId) {
+        var linhas = escalacoes.findByPlanoId(plano.getId());
+        var jogadorIds = linhas.stream().map(PlanoEscalacao::getJogadorId).toList();
+
+        var atuais = avaliacaoService.listarOveralls(jogadorIds, temporadaId).stream()
+                .collect(Collectors.toMap(
+                        overall -> new ChaveDeAptidao(overall.jogadorId(), overall.posicaoId()),
+                        OverallDeJogador::overall));
+
+        var comVinculo = jogadorService
+                .listarElencoParaEscalacao(plano.getClubeId(), temporadaId).stream()
+                .map(JogadorDoElenco::jogadorId)
+                .collect(Collectors.toSet());
+
+        var titulares = linhas.stream()
+                .filter(linha -> linha.getPapel() == Papel.TITULAR)
+                .sorted(Comparator.comparingInt(PlanoEscalacao::getSlotOrdem))
+                .map(linha -> escalado(linha, atuais, comVinculo))
+                .toList();
+
+        var banco = linhas.stream()
+                .filter(linha -> linha.getPapel() == Papel.RESERVA)
+                .sorted(Comparator.comparingInt(PlanoEscalacao::getOrdemBanco))
+                .map(linha -> escalado(linha, atuais, comVinculo))
+                .toList();
+
+        var formacao = formacoes.findById(plano.getFormacaoId()).orElseThrow();
+
+        return new PlanoVigente(plano.getId(), plano.getClubeId(), plano.getTemporadaId(),
+                plano.getVersao(), plano.getOrigem(), formacao.getId(), formacao.getCodigo(),
+                plano.getMentalidade(), plano.getRitmo(), plano.getLinhaDefensiva(),
+                plano.getPressao(), plano.getLargura(), plano.getCapitaoId(), titulares, banco);
+    }
+
+    private record ChaveDeAptidao(Long jogadorId, Long posicaoId) {
+    }
+
+    private static Escalado escalado(PlanoEscalacao linha,
+                                     Map<ChaveDeAptidao, Integer> atuais,
+                                     Set<Long> comVinculo) {
+        var chave = new ChaveDeAptidao(linha.getJogadorId(), linha.getPosicaoId());
+        return new Escalado(linha.getJogadorId(), linha.getPosicaoId(),
+                linha.getSlotOrdem(), linha.getOrdemBanco(),
+                linha.getAptidaoNoMomento(),
+                // Sem linha atual — overall apagado —, o congelado é a melhor resposta.
+                atuais.getOrDefault(chave, linha.getAptidaoNoMomento()),
+                !comVinculo.contains(linha.getJogadorId()));
     }
 
     /**
